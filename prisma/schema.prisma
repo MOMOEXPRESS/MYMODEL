@@ -1,0 +1,511 @@
+// LuxLane — greenfield data model.
+// Source of truth: brief §7.
+//
+// Conventions
+//   - All ids are cuid().
+//   - All timestamps are UTC, default now().
+//   - Everything is tenant-scoped by Agency.
+//   - Enums match the brief exactly; do not rename without updating the spec.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────────────────────────────────────
+// Tenancy
+// ───────────────────────────────────────────────────────────
+
+model Agency {
+  id                       String   @id @default(cuid())
+  name                     String
+  city                     String?
+  country                  String?  @default("FR")
+  signupCode               String   @unique
+  logoUrl                  String?
+  defaultCommissionPercent Float    @default(20)
+  currency                 String   @default("EUR")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  users      User[]
+  members    AgencyMember[]
+  models     Model[]
+  jobs       Job[]
+  broadcasts Broadcast[]
+  invites    AgencyInvite[]
+
+  @@index([signupCode])
+}
+
+enum UserRole {
+  AGENCY_STAFF
+  MODEL
+  LUXLANE_ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  phone        String?
+  role         UserRole
+  agencyId     String?
+  suspended    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  agency              Agency?              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agencyMembership    AgencyMember?
+  model               Model?
+  messagesSent        Message[]            @relation("MessagesSent")
+  broadcastsSent      Broadcast[]          @relation("BroadcastsSent")
+  jobsOwned           Job[]                @relation("JobsOwned")
+  assignmentsProposed JobAssignment[]      @relation("AssignmentsProposed")
+  filesUploaded       RoomFile[]           @relation("FilesUploaded")
+  notifications       Notification[]
+  conversationMembers ConversationMember[]
+
+  @@index([agencyId])
+}
+
+enum AgencyMemberRole {
+  OWNER
+  BOOKER
+  PRODUCTION
+  ACCOUNTS
+}
+
+model AgencyMember {
+  userId      String           @id
+  agencyId    String
+  role        AgencyMemberRole
+  permissions Json?
+  createdAt   DateTime         @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
+
+// ───────────────────────────────────────────────────────────
+// Models (the talent)
+// ───────────────────────────────────────────────────────────
+
+enum Division {
+  WOMEN
+  MEN
+  CURVE
+  KIDS
+  TALENTS
+  NEW_FACES
+}
+
+enum ModelStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+}
+
+model Model {
+  userId            String      @id
+  agencyId          String
+  division          Division    @default(WOMEN)
+  status            ModelStatus @default(ACTIVE)
+  // Measurements JSON: { heightCm, bustCm, waistCm, hipsCm, shoeEu, dressEu, suitEu, inseamCm, hair, eyes }
+  measurements      Json?
+  exclusions        String[]    @default([])
+  commissionPercent Float?
+  motherAgencyId    String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency           Agency              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  documents        ModelDocument[]
+  portfolio        PortfolioImage[]
+  availability     Availability[]
+  assignments      JobAssignment[]
+  holds            Hold[]
+  broadcastTargets BroadcastResponse[]
+
+  @@index([agencyId, status])
+  @@index([agencyId, division])
+}
+
+enum DocumentType {
+  PASSPORT
+  VISA
+  TAX_FORM
+  CONTRACT
+  RELEASE
+  BANK_INFO
+  OTHER
+}
+
+model ModelDocument {
+  id         String       @id @default(cuid())
+  modelId    String
+  type       DocumentType
+  fileUrl    String
+  fileName   String
+  expiresAt  DateTime?
+  uploadedAt DateTime     @default(now())
+
+  model Model @relation(fields: [modelId], references: [userId], onDelete: Cascade)
+
+  @@index([modelId])
+  @@index([expiresAt])
+}
+
+enum PortfolioKind {
+  BOOK
+  POLAROID
+  VIDEO
+}
+
+model PortfolioImage {
+  id        String        @id @default(cuid())
+  modelId   String
+  url       String
+  kind      PortfolioKind @default(BOOK)
+  order     Int           @default(0)
+  caption   String?
+  createdAt DateTime      @default(now())
+
+  model Model @relation(fields: [modelId], references: [userId], onDelete: Cascade)
+
+  @@index([modelId, kind, order])
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+  TRAVELING
+}
+
+model Availability {
+  id      String             @id @default(cuid())
+  modelId String
+  date    DateTime           @db.Date
+  status  AvailabilityStatus
+  reason  String?
+
+  model Model @relation(fields: [modelId], references: [userId], onDelete: Cascade)
+
+  @@unique([modelId, date])
+  @@index([modelId, date])
+}
+
+// ───────────────────────────────────────────────────────────
+// Jobs & holds
+// ───────────────────────────────────────────────────────────
+
+enum JobType {
+  EDITORIAL
+  CAMPAIGN
+  RUNWAY
+  FITTING
+  COMMERCIAL
+  EVENT
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CONFIRMED
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum RateType {
+  DAY
+  FLAT
+  HOURLY
+}
+
+model Job {
+  id           String    @id @default(cuid())
+  agencyId     String
+  title        String
+  type         JobType
+  startDate    DateTime  @db.Date
+  endDate      DateTime  @db.Date
+  location     String?
+  locationCity String?
+  brief        String?   @db.Text
+  defaultRate  Float?
+  currency     String    @default("EUR")
+  rateType     RateType  @default(DAY)
+  status       JobStatus @default(DRAFT)
+  ownerUserId  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  agency      Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  owner       User            @relation("JobsOwned", fields: [ownerUserId], references: [id])
+  contacts    JobContact[]
+  assignments JobAssignment[]
+  holds       Hold[]
+  room        JobRoom?
+  broadcasts  Broadcast[]
+
+  @@index([agencyId, status])
+  @@index([agencyId, startDate])
+}
+
+enum JobContactRole {
+  CLIENT
+  BOOKER
+  PRODUCER
+  VENUE
+  OTHER
+}
+
+model JobContact {
+  id      String         @id @default(cuid())
+  jobId   String
+  name    String
+  role    JobContactRole @default(CLIENT)
+  company String?
+  email   String?
+  phone   String?
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+enum AssignmentStatus {
+  PROPOSED
+  OPTION_1
+  OPTION_2
+  OPTION_3
+  CONFIRMED
+  DECLINED
+  RELEASED
+  DONE
+}
+
+model JobAssignment {
+  id               String           @id @default(cuid())
+  jobId            String
+  modelId          String
+  status           AssignmentStatus @default(PROPOSED)
+  rate             Float?
+  rateType         RateType?
+  notes            String?
+  proposedByUserId String
+  proposedAt       DateTime         @default(now())
+  confirmedAt      DateTime?
+  declinedAt       DateTime?
+
+  job        Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  model      Model @relation(fields: [modelId], references: [userId], onDelete: Cascade)
+  proposedBy User  @relation("AssignmentsProposed", fields: [proposedByUserId], references: [id])
+
+  @@unique([jobId, modelId])
+  @@index([jobId])
+  @@index([modelId, status])
+}
+
+// Denormalized per-date-per-model hold — populated from JobAssignments.
+// This is what the Board queries against for fast lookups.
+enum HoldPriority {
+  P1
+  P2
+  P3
+  CONFIRMED
+}
+
+enum HoldStatus {
+  HELD
+  CONFIRMED
+  RELEASED
+}
+
+model Hold {
+  id       String       @id @default(cuid())
+  modelId  String
+  jobId    String
+  date     DateTime     @db.Date
+  priority HoldPriority
+  status   HoldStatus   @default(HELD)
+
+  model Model @relation(fields: [modelId], references: [userId], onDelete: Cascade)
+  job   Job   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([modelId, date, jobId])
+  @@index([modelId, date])
+  @@index([jobId, date])
+}
+
+// ───────────────────────────────────────────────────────────
+// Job rooms (chat + files + schedule, per job)
+// ───────────────────────────────────────────────────────────
+
+model JobRoom {
+  id        String   @id @default(cuid())
+  jobId     String   @unique
+  createdAt DateTime @default(now())
+
+  job      Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  messages Message[]
+  files    RoomFile[]
+  schedule RoomScheduleItem[]
+}
+
+model Message {
+  id                   String   @id @default(cuid())
+  roomId               String?
+  directConversationId String?
+  senderUserId         String
+  body                 String   @db.Text
+  attachmentUrl        String?
+  createdAt            DateTime @default(now())
+
+  room               JobRoom?            @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  directConversation DirectConversation? @relation(fields: [directConversationId], references: [id], onDelete: Cascade)
+  sender             User                @relation("MessagesSent", fields: [senderUserId], references: [id])
+
+  @@index([roomId, createdAt])
+  @@index([directConversationId, createdAt])
+}
+
+enum RoomFileType {
+  CALLSHEET
+  BRIEF
+  LOOKBOOK
+  CONTRACT
+  OTHER
+}
+
+model RoomFile {
+  id               String       @id @default(cuid())
+  roomId           String
+  name             String
+  type             RoomFileType @default(OTHER)
+  url              String
+  uploadedByUserId String
+  createdAt        DateTime     @default(now())
+
+  room       JobRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation("FilesUploaded", fields: [uploadedByUserId], references: [id])
+
+  @@index([roomId])
+}
+
+model RoomScheduleItem {
+  id       String   @id @default(cuid())
+  roomId   String
+  title    String
+  date     DateTime @db.Date
+  time     String?
+  location String?
+  notes    String?
+
+  room JobRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, date])
+}
+
+// ───────────────────────────────────────────────────────────
+// Direct 1:1 conversations (agency staff ↔ model)
+// ───────────────────────────────────────────────────────────
+
+model DirectConversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  members  ConversationMember[]
+  messages Message[]
+}
+
+model ConversationMember {
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+
+  conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+}
+
+// ───────────────────────────────────────────────────────────
+// Broadcasts — "any of you free Mar 10–12?"
+// ───────────────────────────────────────────────────────────
+
+model Broadcast {
+  id           String   @id @default(cuid())
+  agencyId     String
+  senderUserId String
+  body         String   @db.Text
+  jobId        String?
+  createdAt    DateTime @default(now())
+
+  agency    Agency              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  sender    User                @relation("BroadcastsSent", fields: [senderUserId], references: [id])
+  job       Job?                @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  responses BroadcastResponse[]
+
+  @@index([agencyId, createdAt])
+}
+
+enum BroadcastResponseValue {
+  ACCEPT
+  DECLINE
+  NO_RESPONSE
+}
+
+model BroadcastResponse {
+  id          String                 @id @default(cuid())
+  broadcastId String
+  modelId     String
+  response    BroadcastResponseValue @default(NO_RESPONSE)
+  respondedAt DateTime?
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  model     Model     @relation(fields: [modelId], references: [userId], onDelete: Cascade)
+
+  @@unique([broadcastId, modelId])
+  @@index([modelId])
+}
+
+// ───────────────────────────────────────────────────────────
+// Notifications & invites
+// ───────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  payload   Json
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+}
+
+model AgencyInvite {
+  id               String    @id @default(cuid())
+  agencyId         String
+  token            String    @unique
+  email            String?
+  expiresAt        DateTime?
+  consumedByUserId String?
+  createdAt        DateTime  @default(now())
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+}
