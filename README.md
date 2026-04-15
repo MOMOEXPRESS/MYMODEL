@@ -43,15 +43,23 @@ Open http://localhost:3000.
    - `AUTH_SECRET` — any 32+ char random string (e.g. `openssl rand -hex 32`).
    - `BLOB_READ_WRITE_TOKEN` — optional; only needed for uploaded files. Create a
      Vercel Blob store from Storage → Create and the token is auto-attached.
-4. **Deploy.** The build script runs `prisma generate && prisma db push` against the
-   attached DB, then `next build`. The schema syncs on every deploy — fine for
-   pre-migration solo development; switch to `prisma migrate deploy` once real users
-   arrive.
-5. **Seed once.** From your machine:
+4. **Deploy.** The build script runs `prisma generate && next build`. Deliberately
+   minimal — schema application is not part of the build, so missing env vars can't
+   break it and the build stays fast. Apply the schema separately (next step).
+5. **Apply the schema and seed, once, from your machine.** Vercel's CLI gives you
+   a `.env` pointing at the live Postgres:
    ```bash
+   npm i -g vercel
+   vercel link
    vercel env pull .env.production.local
-   DOTENV_CONFIG_PATH=.env.production.local npx -y dotenv-cli -e .env.production.local -- npm run db:seed
+   # run Prisma against that env
+   cp .env.production.local .env.tmp && mv .env.tmp .env
+   npm run db:push      # applies the schema (one-off)
+   npm run db:seed      # demo agency + 20 models (optional)
    ```
+   From then on, every deploy just runs `next build`. When you change the schema,
+   re-run `npm run db:push` from your laptop (or switch to `prisma migrate` once
+   you want real migrations).
 
 > Env vars are accessed lazily — `npm run build` succeeds even before `DATABASE_URL`
 > or `AUTH_SECRET` are wired, so the first deploy won't fail during
