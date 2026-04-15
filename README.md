@@ -46,7 +46,11 @@ Agency signup code: `PARIS001`.
   page with editable stats, portfolio (book / polaroids / video), documents with
   expiry tracking, 8-week availability calendar. Uploads run through
   `@vercel/blob` in prod and fall back to `public/uploads/` in local dev.
-- ⬜ Sprint 2 — The Board (the killer view)
+- ✅ **Sprint 2 — The Board.** A sticky-header, sticky-left-column grid with
+  one row per model and one column per date. 14/30/60-day window, division
+  filter, live model search, prev/next/today nav, hover tooltips, drag-to-select
+  rectangles across rows and columns, one-click bulk availability edits with
+  optimistic UI. Powered by `GET /api/board` and `PATCH /api/board/cell`.
 - ⬜ Sprint 3 — Jobs + Assignments
 - ⬜ Sprint 4 — Comp card generator
 - ⬜ Sprint 5 — Communication (1:1 + broadcasts)

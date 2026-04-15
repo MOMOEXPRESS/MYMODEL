@@ -1,7 +1,8 @@
-// Seed: one fake agency + owner + 20 models.
-// Idempotent — safe to re-run. Deletes the demo agency first, then recreates.
+// Seed: one fake agency + owner + 20 models + a little availability
+// so the Board has something to show on first load. Idempotent — safe to
+// re-run. Deletes the demo agency first, then recreates.
 
-import { PrismaClient, Division, ModelStatus } from "@prisma/client";
+import { PrismaClient, Division, ModelStatus, AvailabilityStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -110,6 +111,46 @@ async function main() {
         },
       },
     });
+  }
+
+  console.log("📅  Sprinkling some availability so the Board has life...");
+  const allModels = await prisma.model.findMany({ where: { agencyId: agency.id } });
+  const today = new Date();
+  const today0 = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  for (const m of allModels) {
+    // ~30% chance per model of a 2-5 day traveling block somewhere in the next 45 days.
+    if (Math.random() < 0.3) {
+      const startOffset = randInt(1, 40);
+      const span = randInt(2, 5);
+      for (let d = 0; d < span; d++) {
+        const date = new Date(today0);
+        date.setUTCDate(date.getUTCDate() + startOffset + d);
+        await prisma.availability.create({
+          data: {
+            modelId: m.userId,
+            date,
+            status: AvailabilityStatus.TRAVELING,
+            reason: "Milan",
+          },
+        });
+      }
+    }
+    // A few scattered unavailable days.
+    for (let i = 0; i < randInt(0, 3); i++) {
+      const date = new Date(today0);
+      date.setUTCDate(date.getUTCDate() + randInt(1, 40));
+      try {
+        await prisma.availability.create({
+          data: {
+            modelId: m.userId,
+            date,
+            status: AvailabilityStatus.UNAVAILABLE,
+          },
+        });
+      } catch {
+        // dupe date — ignore
+      }
+    }
   }
 
   console.log("");
