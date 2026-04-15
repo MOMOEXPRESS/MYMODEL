@@ -29,6 +29,30 @@ npm run dev
 
 Open http://localhost:3000.
 
+## Deploying to Vercel
+
+1. **Create the project.** "Add new → Project" in Vercel, pick `momoexpress/mymodel`.
+   The included `vercel.json` sets the build command and installs deps.
+2. **Provision a Postgres.** Easiest: Vercel's integrated Neon — "Storage → Create Database
+   → Postgres". It will auto-attach a `DATABASE_URL` env var to the project.
+3. **Add two env vars** (Settings → Environment Variables, all environments):
+   - `AUTH_SECRET` — any 32+ char random string (e.g. `openssl rand -hex 32`).
+   - `BLOB_READ_WRITE_TOKEN` — optional; only needed for uploaded files. Create a
+     Vercel Blob store from Storage → Create and the token is auto-attached.
+4. **Deploy.** The build script runs `prisma generate && prisma db push` against the
+   attached DB, then `next build`. The schema syncs on every deploy — fine for
+   pre-migration solo development; switch to `prisma migrate deploy` once real users
+   arrive.
+5. **Seed once.** From your machine:
+   ```bash
+   vercel env pull .env.production.local
+   DOTENV_CONFIG_PATH=.env.production.local npx -y dotenv-cli -e .env.production.local -- npm run db:seed
+   ```
+
+> Env vars are accessed lazily — `npm run build` succeeds even before `DATABASE_URL`
+> or `AUTH_SECRET` are wired, so the first deploy won't fail during
+> "Collecting page data". Missing vars only throw when a request actually uses them.
+
 ### Demo accounts (after `db:seed`)
 
 | Role  | Email                          | Password     |

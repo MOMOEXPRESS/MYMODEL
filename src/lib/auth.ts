@@ -10,7 +10,14 @@ import bcrypt from "bcryptjs";
 import { env } from "./env";
 import { prisma } from "./db";
 
-const SECRET = new TextEncoder().encode(env.AUTH_SECRET);
+// Lazy — don't touch env.AUTH_SECRET at module load so build-time page-data
+// collection doesn't require it. Computed + cached on first request.
+let SECRET_BYTES: Uint8Array | null = null;
+function secret(): Uint8Array {
+  if (!SECRET_BYTES) SECRET_BYTES = new TextEncoder().encode(env.AUTH_SECRET);
+  return SECRET_BYTES;
+}
+
 const COOKIE_NAME = "ll_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
@@ -31,12 +38,12 @@ export async function signSession(payload: SessionPayload): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${COOKIE_MAX_AGE}s`)
-    .sign(SECRET);
+    .sign(secret());
 }
 
 export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, secret());
     if (typeof payload.userId !== "string") return null;
     return { userId: payload.userId };
   } catch {
