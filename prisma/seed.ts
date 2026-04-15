@@ -1,6 +1,12 @@
-// Seed: one fake agency + owner + 20 models + a little availability
-// so the Board has something to show on first load. Idempotent — safe to
-// re-run. Deletes the demo agency first, then recreates.
+// Seed: one fake agency + owner + 20 models + a little availability so the
+// Board has something to show on first load.
+//
+// Non-destructive: if the demo agency already exists we skip entirely. This
+// makes it safe to run from a Vercel build hook on every deploy without
+// wiping out real data the user has created through the UI.
+//
+// Pass LUXLANE_SEED_FORCE=1 to re-seed (deletes and re-creates the demo
+// agency). Useful locally.
 
 import { loadEnvFile } from "node:process";
 try {
@@ -39,9 +45,17 @@ function randInt(min: number, max: number): number {
 }
 
 async function main() {
-  console.log("🧹  Clearing existing demo data...");
   const existing = await prisma.agency.findUnique({ where: { signupCode: DEMO_CODE } });
-  if (existing) {
+  const force = process.env.LUXLANE_SEED_FORCE === "1";
+
+  if (existing && !force) {
+    console.log(`ℹ️   Demo agency (${DEMO_CODE}) already exists — skipping seed.`);
+    console.log("    Set LUXLANE_SEED_FORCE=1 to wipe and re-create.");
+    return;
+  }
+
+  if (existing && force) {
+    console.log("🧹  LUXLANE_SEED_FORCE=1 — clearing existing demo data...");
     await prisma.agency.delete({ where: { id: existing.id } });
   }
 
