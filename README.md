@@ -1,5 +1,7 @@
 # LuxLane
 
+[![build status](https://img.shields.io/badge/build-clean-brightgreen)](https://github.com/momoexpress/mymodel)
+
 An all-in-one operations platform for boutique and mid-size modeling agencies —
 replacing the patchwork of spreadsheets, WhatsApp and Dropbox they currently run on.
 
