@@ -1,56 +1,59 @@
 import { prisma } from "@/lib/db";
 import { requireModel } from "@/lib/auth-guards";
+import { MeasurementsForm } from "@/app/agency/models/[modelId]/measurements-form";
+import { PortfolioSection } from "@/app/agency/models/[modelId]/portfolio-section";
+import { DocumentsSection } from "@/app/agency/models/[modelId]/documents-section";
+import { AvailabilitySection } from "@/app/agency/models/[modelId]/availability-section";
 
 export default async function MyCardPage() {
   const user = await requireModel();
   const model = await prisma.model.findUnique({
     where: { userId: user.id },
+    include: {
+      portfolio: { orderBy: [{ kind: "asc" }, { order: "asc" }] },
+      documents: { orderBy: { uploadedAt: "desc" } },
+      availability: {
+        where: { date: { gte: startOfToday() } },
+        orderBy: { date: "asc" },
+        take: 120,
+      },
+    },
   });
+  if (!model) return null;
 
-  const measurements = (model?.measurements ?? {}) as Record<string, unknown>;
+  const measurements = (model.measurements ?? {}) as Record<string, unknown>;
 
   return (
     <div>
       <h1 className="font-serif text-3xl tracking-tight">My card</h1>
-      <p className="mt-2 text-sm text-ink-muted">Your stats, portfolio and documents.</p>
+      <p className="mt-2 text-sm text-ink-muted">
+        Keep this up to date — your agency uses it every day.
+      </p>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <section className="ll-card p-6">
-          <h2 className="font-medium">Stats</h2>
-          <dl className="mt-4 space-y-2 text-sm">
-            <Row label="Division" value={model?.division.replace("_", " ") ?? "—"} />
-            <Row label="Height" value={fmt(measurements.heightCm, "cm")} />
-            <Row label="Bust" value={fmt(measurements.bustCm, "cm")} />
-            <Row label="Waist" value={fmt(measurements.waistCm, "cm")} />
-            <Row label="Hips" value={fmt(measurements.hipsCm, "cm")} />
-            <Row label="Shoe" value={fmt(measurements.shoeEu, "eu")} />
-            <Row label="Hair" value={(measurements.hair as string) ?? "—"} />
-            <Row label="Eyes" value={(measurements.eyes as string) ?? "—"} />
-          </dl>
-        </section>
-
-        <section className="ll-card p-6">
-          <h2 className="font-medium">Portfolio</h2>
-          <p className="mt-4 text-sm text-ink-muted">
-            Photo uploads come in Sprint 1. Your agency will be able to add polaroids,
-            book shots and video reel here.
-          </p>
-        </section>
+      <div className="mt-8 grid gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-8">
+          <PortfolioSection modelId={model.userId} portfolio={model.portfolio} />
+          <DocumentsSection modelId={model.userId} documents={model.documents} />
+          <AvailabilitySection modelId={model.userId} availability={model.availability} />
+        </div>
+        <div>
+          <MeasurementsForm
+            modelId={model.userId}
+            model={{
+              division: model.division,
+              status: model.status,
+              commissionPercent: model.commissionPercent,
+              exclusions: model.exclusions,
+              measurements,
+            }}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-ink-muted">{label}</dt>
-      <dd className="font-medium">{value}</dd>
-    </div>
-  );
-}
-
-function fmt(value: unknown, unit: string): string {
-  if (typeof value !== "number") return "—";
-  return `${value} ${unit}`;
+function startOfToday(): Date {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }

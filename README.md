@@ -42,7 +42,10 @@ Agency signup code: `PARIS001`.
 
 - ✅ **Sprint 0 — Foundation.** Next.js + Prisma + Tailwind scaffold, JWT cookie auth,
   full §7 data model, seed, agency dashboard shell, model web shell, auth pages.
-- ⬜ Sprint 1 — Roster + Model card + uploads
+- ✅ **Sprint 1 — Roster + Model card + uploads.** Roster search/filter, model detail
+  page with editable stats, portfolio (book / polaroids / video), documents with
+  expiry tracking, 8-week availability calendar. Uploads run through
+  `@vercel/blob` in prod and fall back to `public/uploads/` in local dev.
 - ⬜ Sprint 2 — The Board (the killer view)
 - ⬜ Sprint 3 — Jobs + Assignments
 - ⬜ Sprint 4 — Comp card generator
