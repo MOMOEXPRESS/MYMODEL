@@ -2,6 +2,14 @@
 // so the Board has something to show on first load. Idempotent — safe to
 // re-run. Deletes the demo agency first, then recreates.
 
+import { loadEnvFile } from "node:process";
+try {
+  // Best-effort — in prod the env comes from the platform.
+  loadEnvFile(".env");
+} catch {
+  /* ignore */
+}
+
 import { PrismaClient, Division, ModelStatus, AvailabilityStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
