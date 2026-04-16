@@ -5,6 +5,7 @@ import { requireModel } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import { JobRoomSection } from "@/app/agency/jobs/[jobId]/job-room-section";
 import { TravelSection } from "@/app/agency/jobs/[jobId]/travel-section";
+import { HoldDecisionBar } from "./decision-bar";
 
 export default async function ModelJobDetail({
   params,
@@ -67,6 +68,10 @@ export default async function ModelJobDetail({
           )}
         </div>
       </header>
+
+      <div className="mt-6">
+        <HoldDecisionBar jobId={job.id} status={assignment.status} />
+      </div>
 
       {job.brief && (
         <section className="mt-6 ll-card p-5">

@@ -200,6 +200,73 @@ export async function deleteJob(formData: FormData) {
   redirect("/agency/jobs");
 }
 
+// Duplicate a job, copying contacts and a fresh date range. Doesn't copy
+// assignments — the new job is empty so the booker can re-pitch.
+export async function duplicateJob(formData: FormData) {
+  const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.create");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
+  const sourceId = String(formData.get("jobId") ?? "");
+  const source = await prisma.job.findUnique({
+    where: { id: sourceId },
+    include: { contacts: true },
+  });
+  if (!source || source.agencyId !== user.agencyId) {
+    return { ok: false as const, error: "Not found" };
+  }
+
+  // Default to a one-week shift forward — overrideable via formData.
+  const offsetDays =
+    Number(formData.get("offsetDays") ?? "") || 7;
+  const newStart = new Date(source.startDate);
+  newStart.setUTCDate(newStart.getUTCDate() + offsetDays);
+  const newEnd = new Date(source.endDate);
+  newEnd.setUTCDate(newEnd.getUTCDate() + offsetDays);
+
+  const dup = await prisma.job.create({
+    data: {
+      agencyId: source.agencyId,
+      ownerUserId: user.id,
+      title: `${source.title} (copy)`,
+      type: source.type,
+      startDate: newStart,
+      endDate: newEnd,
+      location: source.location,
+      locationCity: source.locationCity,
+      brief: source.brief,
+      defaultRate: source.defaultRate,
+      currency: source.currency,
+      rateType: source.rateType,
+      status: JobStatus.DRAFT,
+      contacts: {
+        create: source.contacts.map((c) => ({
+          name: c.name,
+          role: c.role,
+          company: c.company,
+          email: c.email,
+          phone: c.phone,
+        })),
+      },
+    },
+  });
+
+  await logEvent({
+    agencyId: user.agencyId,
+    actorId: user.id,
+    actorName: user.displayName,
+    action: "job.duplicated",
+    entityType: "Job",
+    entityId: dup.id,
+    summary: `Duplicated ${source.title}`,
+  });
+
+  revalidatePath("/agency/jobs");
+  redirect(`/agency/jobs/${dup.id}`);
+}
+
 export async function restoreJob(formData: FormData) {
   const user = await requireAgencyStaff();
   const jobId = String(formData.get("jobId") ?? "");
@@ -281,6 +348,11 @@ export async function deleteJobContact(formData: FormData) {
 
 export async function attachModelsToJob(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "assignment.create");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const jobId = String(formData.get("jobId") ?? "");
   const modelIds = formData.getAll("modelIds").map(String);
   if (!jobId || modelIds.length === 0) {
@@ -330,6 +402,11 @@ const setAssignmentSchema = z.object({
 
 export async function updateAssignment(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "assignment.edit");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = setAssignmentSchema.safeParse(raw);
@@ -426,6 +503,11 @@ export async function updateAssignment(formData: FormData) {
 
 export async function removeAssignment(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "assignment.delete");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const assignmentId = String(formData.get("assignmentId") ?? "");
   const a = await prisma.jobAssignment.findUnique({
     where: { id: assignmentId },

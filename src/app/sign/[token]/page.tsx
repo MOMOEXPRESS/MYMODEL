@@ -13,12 +13,9 @@ export default async function SignPage({
     where: { sigToken: token },
     include: { agency: { select: { name: true } } },
   });
-
-  const alreadySigned = await prisma.contract.findFirst({
-    where: { signedAt: { not: null } },
-    // Only to fetch by token-less state after signing; we keep simple:
-    take: 0,
-  });
+  const expired = Boolean(
+    contract?.sigTokenExpiresAt && contract.sigTokenExpiresAt < new Date(),
+  );
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-paper">
@@ -34,6 +31,13 @@ export default async function SignPage({
             <Link href="/" className="mt-6 inline-block ll-btn-secondary">
               &larr; Home
             </Link>
+          </>
+        ) : expired ? (
+          <>
+            <h1 className="mt-2 font-serif text-2xl">Link has expired</h1>
+            <p className="mt-3 text-sm text-ink-muted">
+              For security, signing links expire after 14 days. Ask the agency to send a fresh one.
+            </p>
           </>
         ) : contract.status === "SIGNED" ? (
           <>

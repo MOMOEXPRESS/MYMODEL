@@ -13,6 +13,7 @@ const measurementsSchema = z.object({
   modelId: z.string().cuid(),
   division: z.nativeEnum(Division),
   status: z.nativeEnum(ModelStatus),
+  stageName: z.string().max(80).optional().nullable(),
   commissionPercent: z.coerce.number().min(0).max(100).optional().nullable(),
   exclusions: z.string().optional().default(""), // comma-separated
   heightCm: z.coerce.number().int().min(100).max(230).optional().nullable(),
@@ -63,6 +64,7 @@ export async function saveMeasurements(formData: FormData) {
     data: {
       division: data.division,
       status: data.status,
+      stageName: data.stageName?.trim() || null,
       commissionPercent: data.commissionPercent ?? null,
       exclusions,
       measurements,

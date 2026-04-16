@@ -33,6 +33,7 @@ export function CompCardBuilder({
   const [picks, setPicks] = useState<string[]>(() =>
     portfolio.slice(0, MAX_PICKS).map((p) => p.id),
   );
+  const [template, setTemplate] = useState<"CLASSIC" | "EDITORIAL">("CLASSIC");
 
   function togglePick(id: string) {
     setPicks((prev) => {
@@ -56,7 +57,7 @@ export function CompCardBuilder({
 
   const query = new URLSearchParams();
   if (picks.length > 0) query.set("imageIds", picks.join(","));
-  query.set("template", "CLASSIC");
+  query.set("template", template);
 
   const pdfUrl = `/api/compcard/${modelId}/pdf?${query.toString()}`;
   const pngUrl = `/api/compcard/${modelId}/png?${query.toString()}`;
@@ -68,20 +69,25 @@ export function CompCardBuilder({
         subtitle={`Pick up to ${MAX_PICKS} photos, then download. The first pick is the hero.`}
         actions={
           <div className="flex items-center gap-2">
-            <a
-              href={pdfUrl}
-              className="ll-btn-primary"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <div className="flex rounded-lg border border-paper-border overflow-hidden">
+              {(["CLASSIC", "EDITORIAL"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTemplate(t)}
+                  className={
+                    template === t
+                      ? "px-3 py-1.5 text-xs bg-ink text-paper"
+                      : "px-3 py-1.5 text-xs bg-paper-elevated hover:bg-paper"
+                  }
+                >
+                  {t === "CLASSIC" ? "Classic" : "Editorial"}
+                </button>
+              ))}
+            </div>
+            <a href={pdfUrl} className="ll-btn-primary" target="_blank" rel="noreferrer">
               <Download size={14} /> PDF
             </a>
-            <a
-              href={pngUrl}
-              className="ll-btn-secondary"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href={pngUrl} className="ll-btn-secondary" target="_blank" rel="noreferrer">
               <Download size={14} /> PNG
             </a>
           </div>

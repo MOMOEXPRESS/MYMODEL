@@ -84,7 +84,11 @@ export async function createInvoiceFromJob(formData: FormData) {
     ];
   }
 
-  const taxAmount = subtotal * (d.taxRate / 100);
+  // Sum tax per line (each can carry its own rate; falls back to header).
+  const taxAmount = lineItems.reduce((s, li) => {
+    const r = (li.taxRate ?? d.taxRate) / 100;
+    return s + li.total * r;
+  }, 0);
   const total = subtotal + taxAmount;
   const number = await nextInvoiceNumber(user.agencyId);
 

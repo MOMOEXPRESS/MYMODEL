@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { initials, cn } from "@/lib/utils";
+import { initials, modelDisplay, cn } from "@/lib/utils";
 import { RosterFilters } from "./roster-filters";
 
 const DIVISIONS: Division[] = ["WOMEN", "MEN", "CURVE", "KIDS", "TALENTS", "NEW_FACES"];
@@ -97,14 +97,67 @@ export default async function RosterPage({
             />
           )
         ) : view === "grid" ? (
-          <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {models.map((m) => {
+          // First card spans 2x2 (worth four normal cards) — a "featured"
+          // hero spot that anchors the page.
+          <ul className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 auto-rows-fr gap-4">
+            {models.map((m, i) => {
               const measurements = (m.measurements ?? {}) as Record<string, unknown>;
               const height =
                 typeof measurements.heightCm === "number"
                   ? `${measurements.heightCm} cm`
                   : null;
               const hero = m.portfolio[0];
+              const featured = i === 0;
+
+              if (featured) {
+                return (
+                  <li
+                    key={m.userId}
+                    className="col-span-2 row-span-2 group animate-card-in"
+                  >
+                    <Link
+                      href={`/agency/models/${m.userId}`}
+                      className="block h-full rounded-xl overflow-hidden border border-paper-border bg-paper-elevated hover:border-ink-subtle transition-all hover:-translate-y-0.5 hover:shadow-xl relative"
+                    >
+                      <div className="aspect-square w-full h-full relative bg-paper">
+                        {hero ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={hero.url}
+                            alt={modelDisplay(m)}
+                            loading="eager"
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent-soft/70 to-paper">
+                            <span className="font-serif text-7xl text-accent">
+                              {initials(modelDisplay(m))}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-ink/85 via-ink/40 to-transparent text-paper">
+                          <div className="text-[10px] uppercase tracking-[0.2em] opacity-80 mb-1">
+                            Featured
+                          </div>
+                          <div className="font-serif text-3xl tracking-tight leading-none">
+                            {modelDisplay(m)}
+                          </div>
+                          <div className="mt-2 text-xs opacity-90">
+                            {m.division.replace("_", " ")}
+                            {height && ` · ${height}`}
+                          </div>
+                        </div>
+
+                        <div className="absolute top-3 right-3">
+                          <StatusDot status={m.status} />
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              }
+
               return (
                 <li key={m.userId} className="group animate-card-in">
                   <Link
@@ -116,14 +169,14 @@ export default async function RosterPage({
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={hero.url}
-                          alt={m.user.displayName}
+                          alt={modelDisplay(m)}
                           loading="lazy"
                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent-soft/60 to-paper">
                           <span className="font-serif text-3xl text-accent">
-                            {initials(m.user.displayName)}
+                            {initials(modelDisplay(m))}
                           </span>
                         </div>
                       )}
@@ -132,7 +185,7 @@ export default async function RosterPage({
                       </div>
                     </div>
                     <div className="p-3">
-                      <div className="font-medium text-sm truncate">{m.user.displayName}</div>
+                      <div className="font-medium text-sm truncate">{modelDisplay(m)}</div>
                       <div className="text-[10px] uppercase tracking-widest text-ink-subtle mt-0.5 truncate">
                         {m.division.replace("_", " ")}
                         {height && ` · ${height}`}
@@ -185,12 +238,12 @@ export default async function RosterPage({
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-accent text-xs font-medium">
-                                {initials(m.user.displayName)}
+                                {initials(modelDisplay(m))}
                               </div>
                             )}
                           </div>
                           <span className="font-medium group-hover:underline underline-offset-4">
-                            {m.user.displayName}
+                            {modelDisplay(m)}
                           </span>
                         </Link>
                       </td>

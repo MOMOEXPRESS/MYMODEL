@@ -5,6 +5,7 @@
 // blocking the user's action.
 
 import { prisma } from "./db";
+import { captureException } from "./observe";
 
 export type AuditInput = {
   agencyId: string;
@@ -33,6 +34,6 @@ export async function logEvent(input: AuditInput): Promise<void> {
     });
   } catch (err) {
     // Never surface audit failures — they shouldn't break the user's flow.
-    console.error("[audit] write failed:", err);
+    void captureException(err, { where: "audit.logEvent", input });
   }
 }

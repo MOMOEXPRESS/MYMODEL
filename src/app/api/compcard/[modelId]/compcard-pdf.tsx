@@ -122,6 +122,11 @@ const styles = StyleSheet.create({
 });
 
 export function CompCardDocument({ data }: { data: CompCardData }) {
+  if (data.template === "EDITORIAL") return <EditorialDoc data={data} />;
+  return <ClassicDoc data={data} />;
+}
+
+function ClassicDoc({ data }: { data: CompCardData }) {
   const [hero, ...thumbs] = data.imageUrls;
   const stats = statLines(data.measurements);
 
@@ -178,6 +183,63 @@ export function CompCardDocument({ data }: { data: CompCardData }) {
           {data.agencyName}
           {data.agencyCity ? ` · ${data.agencyCity}` : ""} · luxlane.app
         </Text>
+      </Page>
+    </Document>
+  );
+}
+
+// ────────── Editorial template — full-bleed hero + minimal panel ──────────
+
+const editorialStyles = StyleSheet.create({
+  page: { padding: 0, fontFamily: "Helvetica", color: "#0B0B0C", backgroundColor: "#FFFFFF" },
+  hero: { height: "65%", backgroundColor: "#EEEAE1" },
+  heroImage: { width: "100%", height: "100%", objectFit: "cover" },
+  body: { padding: 36 },
+  agency: { fontSize: 9, letterSpacing: 3, color: "#54545A", textTransform: "uppercase" },
+  modelName: { fontSize: 32, fontFamily: "Times-Roman", marginTop: 6, lineHeight: 1 },
+  division: { fontSize: 9, color: "#8A8A92", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 4 },
+  divider: { marginTop: 14, marginBottom: 14, borderTop: "1px solid #E7E5DF" },
+  statsRow: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
+  statBlock: { width: "31%" },
+  statLabel: { fontSize: 7, color: "#8A8A92", letterSpacing: 1.5, textTransform: "uppercase" },
+  statValue: { fontSize: 11, marginTop: 2 },
+  footer: { position: "absolute", bottom: 18, left: 36, right: 36, fontSize: 7, color: "#8A8A92", flexDirection: "row", justifyContent: "space-between" },
+});
+
+function EditorialDoc({ data }: { data: CompCardData }) {
+  const [hero] = data.imageUrls;
+  const stats = statLines(data.measurements);
+
+  return (
+    <Document author={data.agencyName} title={`${data.modelName} — Editorial`}>
+      <Page size="A4" style={editorialStyles.page}>
+        <View style={editorialStyles.hero}>
+          {hero ? (
+            <Image src={hero} style={editorialStyles.heroImage} />
+          ) : (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 9, color: "#8A8A92", letterSpacing: 2 }}>No photo</Text>
+            </View>
+          )}
+        </View>
+        <View style={editorialStyles.body}>
+          <Text style={editorialStyles.agency}>{data.agencyName}</Text>
+          <Text style={editorialStyles.modelName}>{data.modelName}</Text>
+          <Text style={editorialStyles.division}>{data.division.replace("_", " ")}</Text>
+          <View style={editorialStyles.divider} />
+          <View style={editorialStyles.statsRow}>
+            {stats.map((s) => (
+              <View style={editorialStyles.statBlock} key={s.label}>
+                <Text style={editorialStyles.statLabel}>{s.label}</Text>
+                <Text style={editorialStyles.statValue}>{s.value}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+        <View style={editorialStyles.footer}>
+          <Text>{data.agencyName}{data.agencyCity ? ` · ${data.agencyCity}` : ""}</Text>
+          <Text>luxlane.app</Text>
+        </View>
       </Page>
     </Document>
   );

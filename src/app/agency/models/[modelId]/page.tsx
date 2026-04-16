@@ -120,6 +120,7 @@ export default async function ModelDetailPage({
             model={{
               division: model.division,
               status: model.status,
+              stageName: model.stageName,
               commissionPercent: model.commissionPercent,
               exclusions: model.exclusions,
               measurements,

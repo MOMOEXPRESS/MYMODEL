@@ -89,45 +89,79 @@ export default async function JobsPage({
             />
           )
         ) : (
-          <div className="ll-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-paper border-b border-paper-border text-ink-subtle text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="text-left font-medium px-5 py-3">Job</th>
-                  <th className="text-left font-medium px-5 py-3">Type</th>
-                  <th className="text-left font-medium px-5 py-3">Dates</th>
-                  <th className="text-left font-medium px-5 py-3">Status</th>
-                  <th className="text-right font-medium px-5 py-3">Models</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((j) => (
-                  <tr key={j.id} className="border-b border-paper-border last:border-0 hover:bg-paper/50">
-                    <td className="px-5 py-3">
-                      <Link href={`/agency/jobs/${j.id}`} className="block group">
-                        <div className="font-medium group-hover:underline underline-offset-4">{j.title}</div>
-                        {j.contacts[0] ? (
-                          <div className="text-xs text-ink-subtle mt-0.5">
+          <>
+            {/* Desktop / tablet: table */}
+            <div className="ll-card overflow-hidden hidden md:block">
+              <table className="w-full text-sm">
+                <thead className="bg-paper border-b border-paper-border text-ink-subtle text-xs uppercase tracking-wider">
+                  <tr>
+                    <th className="text-left font-medium px-5 py-3">Job</th>
+                    <th className="text-left font-medium px-5 py-3">Type</th>
+                    <th className="text-left font-medium px-5 py-3">Dates</th>
+                    <th className="text-left font-medium px-5 py-3">Status</th>
+                    <th className="text-right font-medium px-5 py-3">Models</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.map((j) => (
+                    <tr key={j.id} className="border-b border-paper-border last:border-0 hover:bg-paper/50">
+                      <td className="px-5 py-3">
+                        <Link href={`/agency/jobs/${j.id}`} className="block group">
+                          <div className="font-medium group-hover:underline underline-offset-4">{j.title}</div>
+                          {j.contacts[0] ? (
+                            <div className="text-xs text-ink-subtle mt-0.5">
+                              {j.contacts[0].company ?? j.contacts[0].name}
+                            </div>
+                          ) : null}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3 text-ink-muted text-xs uppercase tracking-wider">
+                        {j.type}
+                      </td>
+                      <td className="px-5 py-3 text-ink-muted">{formatDates(j.startDate, j.endDate)}</td>
+                      <td className="px-5 py-3">
+                        <JobStatusBadge status={j.status} />
+                      </td>
+                      <td className="px-5 py-3 text-right text-ink-muted">
+                        {j._count.assignments}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: card list */}
+            <ul className="md:hidden space-y-3">
+              {jobs.map((j) => (
+                <li key={j.id}>
+                  <Link
+                    href={`/agency/jobs/${j.id}`}
+                    className="ll-card p-4 block hover:border-ink-subtle"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{j.title}</div>
+                        {j.contacts[0] && (
+                          <div className="text-xs text-ink-subtle mt-0.5 truncate">
                             {j.contacts[0].company ?? j.contacts[0].name}
                           </div>
-                        ) : null}
-                      </Link>
-                    </td>
-                    <td className="px-5 py-3 text-ink-muted text-xs uppercase tracking-wider">
-                      {j.type}
-                    </td>
-                    <td className="px-5 py-3 text-ink-muted">{formatDates(j.startDate, j.endDate)}</td>
-                    <td className="px-5 py-3">
+                        )}
+                      </div>
                       <JobStatusBadge status={j.status} />
-                    </td>
-                    <td className="px-5 py-3 text-right text-ink-muted">
-                      {j._count.assignments}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-ink-muted">
+                      <span>{j.type.toLowerCase()}</span>
+                      <span>·</span>
+                      <span>{formatDates(j.startDate, j.endDate)}</span>
+                      <span>·</span>
+                      <span>{j._count.assignments} models</span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>

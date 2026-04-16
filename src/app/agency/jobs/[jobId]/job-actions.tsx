@@ -2,8 +2,8 @@
 
 import { JobStatus } from "@prisma/client";
 import { useState, useTransition } from "react";
-import { Trash2 } from "lucide-react";
-import { setJobStatus, deleteJob } from "../actions";
+import { Trash2, Copy } from "lucide-react";
+import { setJobStatus, deleteJob, duplicateJob } from "../actions";
 import { cn } from "@/lib/utils";
 
 const TRANSITIONS: Record<JobStatus, JobStatus[]> = {
@@ -81,6 +81,21 @@ export function JobActions({ jobId, status }: { jobId: string; status: JobStatus
           ))}
         </select>
       )}
+
+      <button
+        onClick={() => {
+          const fd = new FormData();
+          fd.set("jobId", jobId);
+          startTransition(async () => {
+            await duplicateJob(fd);
+          });
+        }}
+        disabled={pending}
+        className="ll-btn-ghost text-xs"
+        title="Duplicate this job (a week later)"
+      >
+        <Copy size={13} /> Duplicate
+      </button>
 
       <button onClick={destroy} disabled={pending} className="ll-btn-ghost text-xs text-red-600">
         <Trash2 size={13} /> Delete

@@ -42,6 +42,7 @@ export default async function MyCardPage() {
             model={{
               division: model.division,
               status: model.status,
+              stageName: model.stageName,
               commissionPercent: model.commissionPercent,
               exclusions: model.exclusions,
               measurements,

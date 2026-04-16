@@ -141,6 +141,10 @@ model Model {
   agencyId          String
   division          Division    @default(WOMEN)
   status            ModelStatus @default(ACTIVE)
+  // Optional stage / professional name. When set, used on the Board, comp
+  // card, public roster page. Legal name (User.displayName) is reserved for
+  // contracts, invoices, payouts.
+  stageName         String?
   // Measurements JSON: { heightCm, bustCm, waistCm, hipsCm, shoeEu, dressEu, suitEu, inseamCm, hair, eyes }
   measurements      Json?
   exclusions        String[]    @default([])
@@ -657,6 +661,9 @@ model InvoiceLineItem {
   unitPrice   Float
   total       Float
   modelId     String?
+  // Per-line tax override (NULL = inherit Invoice.taxRate). Allows mixing
+  // domestic 20% TVA with 0% / reduced lines on the same invoice.
+  taxRate     Float?
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 

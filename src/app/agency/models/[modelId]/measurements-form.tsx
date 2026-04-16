@@ -7,6 +7,7 @@ import { saveMeasurements } from "./actions";
 type Model = {
   division: Division;
   status: ModelStatus;
+  stageName?: string | null;
   commissionPercent: number | null;
   exclusions: string[];
   measurements: Record<string, unknown>;
@@ -41,6 +42,11 @@ export function MeasurementsForm({ modelId, model }: { modelId: string; model: M
   return (
     <form onSubmit={onSubmit} className="ll-card p-5 space-y-4 lg:sticky lg:top-6">
       <h2 className="font-medium">Card</h2>
+
+      <div>
+        <label className="ll-label">Stage name <span className="text-ink-subtle normal-case">(blank = legal name)</span></label>
+        <input name="stageName" defaultValue={model.stageName ?? ""} className="ll-input" />
+      </div>
 
       <div>
         <label className="ll-label">Division</label>

@@ -5,6 +5,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { NotificationBell } from "@/components/notification-bell";
 import { PageTransition } from "@/components/page-transition";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { CommandPalette } from "@/components/command-palette";
 import { getLocale } from "@/lib/i18n";
 import { initials } from "@/lib/utils";
 
@@ -60,6 +61,7 @@ export default async function AgencyLayout({
       <main className="flex-1 min-w-0">
         <PageTransition>{children}</PageTransition>
       </main>
+      <CommandPalette />
     </div>
   );
 }

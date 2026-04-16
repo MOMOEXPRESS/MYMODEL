@@ -80,9 +80,18 @@ export default async function Home() {
       </section>
 
       <footer className="border-t border-paper-border">
-        <div className="mx-auto max-w-6xl px-6 h-16 flex items-center justify-between text-xs text-ink-subtle">
+        <div className="mx-auto max-w-6xl px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-subtle">
           <span>&copy; {new Date().getFullYear()} LuxLane</span>
-          <span>{t("landing.footer.tagline")}</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-ink">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-ink">
+              Terms
+            </Link>
+            <span className="hidden sm:inline">·</span>
+            <span>{t("landing.footer.tagline")}</span>
+          </div>
         </div>
       </footer>
     </main>

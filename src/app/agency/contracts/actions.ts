@@ -69,12 +69,14 @@ export async function sendForSignature(formData: FormData) {
     return { ok: false as const, error: "Upload the contract file first" };
   }
   const token = randomBytes(18).toString("hex");
+  const expiresAt = new Date(Date.now() + 14 * 24 * 3600 * 1000);
   await prisma.contract.update({
     where: { id },
     data: {
       status: ContractStatus.SENT,
       sentAt: new Date(),
       sigToken: token,
+      sigTokenExpiresAt: expiresAt,
     },
   });
 
@@ -110,6 +112,9 @@ export async function signContract(input: unknown) {
   if (!contract) return { ok: false as const, error: "Invalid link" };
   if (contract.status === "SIGNED") return { ok: false as const, error: "Already signed" };
   if (contract.status === "CANCELLED") return { ok: false as const, error: "This contract has been cancelled" };
+  if (contract.sigTokenExpiresAt && contract.sigTokenExpiresAt < new Date()) {
+    return { ok: false as const, error: "This signing link has expired" };
+  }
 
   await prisma.contract.update({
     where: { id: contract.id },

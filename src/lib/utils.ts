@@ -23,3 +23,15 @@ export function initials(name: string): string {
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
 }
+
+/**
+ * Display name for a model — stage name when set, otherwise legal name.
+ * Use anywhere the model is shown publicly (Board, roster, comp card).
+ * Legal name (User.displayName) is reserved for contracts / invoices.
+ */
+export function modelDisplay(m: {
+  stageName?: string | null;
+  user?: { displayName: string } | null;
+}): string {
+  return m.stageName?.trim() || m.user?.displayName || "";
+}
