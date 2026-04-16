@@ -3,6 +3,9 @@ import { requireAgencyStaff } from "@/lib/auth-guards";
 import { AgencyNav } from "@/components/agency-nav";
 import { LogoutButton } from "@/components/logout-button";
 import { NotificationBell } from "@/components/notification-bell";
+import { PageTransition } from "@/components/page-transition";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import { getLocale } from "@/lib/i18n";
 import { initials } from "@/lib/utils";
 
 export default async function AgencyLayout({
@@ -11,6 +14,7 @@ export default async function AgencyLayout({
   children: React.ReactNode;
 }) {
   const user = await requireAgencyStaff();
+  const locale = await getLocale();
 
   return (
     <div className="min-h-screen flex">
@@ -31,7 +35,7 @@ export default async function AgencyLayout({
           </div>
         </div>
 
-        <AgencyNav />
+        <AgencyNav role={user.agencyMembership?.role ?? null} />
 
         <div className="mt-auto p-4 border-t border-paper-border">
           <div className="flex items-center gap-3">
@@ -46,11 +50,16 @@ export default async function AgencyLayout({
             </div>
           </div>
           <LogoutButton className="mt-3 w-full ll-btn-ghost text-xs justify-start" />
+          <div className="mt-3 flex items-center justify-between">
+            <LocaleSwitcher current={locale} />
+          </div>
         </div>
       </aside>
 
       {/* Main */}
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0">
+        <PageTransition>{children}</PageTransition>
+      </main>
     </div>
   );
 }

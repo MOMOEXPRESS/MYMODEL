@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { AgencyProfileForm } from "./agency-profile-form";
 import { TeamSection } from "./team-section";
-import { Copy } from "lucide-react";
 import { CopyInviteClient } from "./copy-invite";
+import { PrivacySection } from "@/components/privacy-section";
 
 export default async function SettingsPage() {
   const user = await requireAgencyStaff();
@@ -76,6 +76,8 @@ export default async function SettingsPage() {
           meUserId={user.id}
           canManage={isOwner}
         />
+
+        <PrivacySection />
       </div>
     </div>
   );

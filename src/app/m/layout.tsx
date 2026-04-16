@@ -3,6 +3,7 @@ import { requireModel } from "@/lib/auth-guards";
 import { ModelNav } from "@/components/model-nav";
 import { LogoutButton } from "@/components/logout-button";
 import { NotificationBell } from "@/components/notification-bell";
+import { PageTransition } from "@/components/page-transition";
 import { initials } from "@/lib/utils";
 
 export default async function ModelLayout({
@@ -36,7 +37,9 @@ export default async function ModelLayout({
         <ModelNav />
       </header>
 
-      <main className="mx-auto max-w-4xl w-full px-6 py-8 flex-1">{children}</main>
+      <main className="mx-auto max-w-4xl w-full px-6 py-8 flex-1">
+        <PageTransition>{children}</PageTransition>
+      </main>
     </div>
   );
 }

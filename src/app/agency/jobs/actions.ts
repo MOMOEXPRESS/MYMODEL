@@ -17,6 +17,11 @@ import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { syncHoldsForJob, detectConflicts } from "@/lib/holds";
 import { logEvent } from "@/lib/audit";
+import { requireCan, ForbiddenError } from "@/lib/permissions";
+
+function forbiddenMsg(err: unknown, fallback: string): string {
+  return err instanceof ForbiddenError ? err.message : fallback;
+}
 
 // ── Jobs ───────────────────────────────────────────────────────────
 
@@ -35,6 +40,11 @@ const createJobSchema = z.object({
 
 export async function createJob(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.create");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
 
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
@@ -136,6 +146,11 @@ export async function updateJob(formData: FormData) {
 
 export async function setJobStatus(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.status_change");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const jobId = String(formData.get("jobId") ?? "");
   const status = String(formData.get("status") ?? "");
   if (!Object.values(JobStatus).includes(status as JobStatus)) {
@@ -153,6 +168,11 @@ export async function setJobStatus(formData: FormData) {
 
 export async function deleteJob(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.delete");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const jobId = String(formData.get("jobId") ?? "");
   const job = await prisma.job.findUnique({ where: { id: jobId } });
   if (!job || job.agencyId !== user.agencyId) {
