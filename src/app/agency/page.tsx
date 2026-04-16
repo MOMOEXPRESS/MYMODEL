@@ -40,6 +40,8 @@ export default async function AgencyHome() {
     upcomingJobs,
     atRiskJobs,
     recentlyConfirmed,
+    paidInvoices6mo,
+    completedJobs6mo,
   ] = await Promise.all([
     prisma.model.count({ where: { agencyId: user.agencyId } }),
     prisma.model.count({ where: { agencyId: user.agencyId, status: "ACTIVE" } }),
@@ -109,7 +111,44 @@ export default async function AgencyHome() {
       orderBy: { confirmedAt: "desc" },
       take: 5,
     }),
+    prisma.invoice.findMany({
+      where: {
+        agencyId: user.agencyId,
+        status: "PAID",
+        paidAt: { gte: new Date(today0.getTime() - 180 * 86400 * 1000) },
+      },
+      select: { total: true, paidAt: true, currency: true },
+    }),
+    prisma.jobAssignment.count({
+      where: {
+        status: "DONE",
+        job: {
+          agencyId: user.agencyId,
+          deletedAt: null,
+          endDate: { gte: new Date(today0.getTime() - 30 * 86400 * 1000) },
+        },
+      },
+    }),
   ]);
+
+  // Build the 6-month revenue series for the mini-chart.
+  const months = Array.from({ length: 6 }).map((_, i) => {
+    const d = new Date(today0);
+    d.setUTCMonth(d.getUTCMonth() - (5 - i));
+    return {
+      key: d.getUTCFullYear() * 100 + d.getUTCMonth(),
+      label: d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }),
+      amount: 0,
+    };
+  });
+  for (const i of paidInvoices6mo) {
+    if (!i.paidAt) continue;
+    const k = i.paidAt.getUTCFullYear() * 100 + i.paidAt.getUTCMonth();
+    const m = months.find((m) => m.key === k);
+    if (m) m.amount += i.total;
+  }
+  const revenue6mo = months.reduce((s, m) => s + m.amount, 0);
+  const maxMonth = Math.max(1, ...months.map((m) => m.amount));
 
   const isFresh = modelCount === 0 && jobCount === 0;
   const greeting = greet(today.getHours());
@@ -155,6 +194,40 @@ export default async function AgencyHome() {
         )}
 
         <section className="lg:col-span-2 space-y-6 mt-6">
+          <Card
+            title="Revenue"
+            link="/agency/analytics"
+            icon={<TrendingUp size={14} />}
+          >
+            <div className="flex items-end justify-between mb-3">
+              <div>
+                <div className="font-serif text-3xl tracking-tight">
+                  {user.agency.currency} {revenue6mo.toFixed(0)}
+                </div>
+                <div className="text-[11px] text-ink-subtle mt-0.5">
+                  Paid last 6 months · {completedJobs6mo} jobs done last 30d
+                </div>
+              </div>
+            </div>
+            <div className="flex items-end gap-2 h-24">
+              {months.map((m) => {
+                const h = Math.max(2, Math.round((m.amount / maxMonth) * 100));
+                return (
+                  <div key={m.key} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full relative flex-1 flex items-end">
+                      <div
+                        className="w-full rounded-t bg-gradient-to-t from-ink to-ink-muted transition-all"
+                        style={{ height: `${h}%` }}
+                        title={`${m.label} · ${user.agency.currency} ${m.amount.toFixed(0)}`}
+                      />
+                    </div>
+                    <div className="text-[10px] text-ink-subtle">{m.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
           <Card title="Recent activity" link="/agency/activity" icon={<History size={14} />}>
             {recentActivity.length === 0 ? (
               <Empty body="As your team works on jobs, edits, and confirms models, you'll see it stream here." />

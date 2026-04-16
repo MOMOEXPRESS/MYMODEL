@@ -2,6 +2,7 @@ import { requireAgencyStaff } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { ProspectsClient } from "./prospects-client";
+import { ScoutingLink } from "./scouting-link";
 
 export default async function ProspectsPage() {
   const user = await requireAgencyStaff();
@@ -13,8 +14,10 @@ export default async function ProspectsPage() {
   return (
     <div>
       <PageHeader
-        title="Scouting"
-        subtitle="Track new-talent prospects from spotted to signed."
+        eyebrow="Scouting"
+        title="Prospects"
+        subtitle="Track new-talent prospects from spotted to signed. Use the scouting link at open castings."
+        actions={<ScoutingLink signupCode={user.agency.signupCode} />}
       />
       <div className="px-8 pb-12">
         <ProspectsClient

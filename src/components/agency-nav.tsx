@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AgencyMemberRole } from "@prisma/client";
 import {
+  Home,
   Users,
   CalendarRange,
   Briefcase,
@@ -29,9 +30,11 @@ type NavItem = {
   icon: React.ComponentType<{ size?: number | string }>;
   /** If set, only roles able to do this action see the link. */
   gate?: Action;
+  exact?: boolean;
 };
 
 const items: NavItem[] = [
+  { href: "/agency", label: "Home", icon: Home, exact: true },
   { href: "/agency/roster", label: "Roster", icon: Users },
   { href: "/agency/board", label: "Board", icon: CalendarRange },
   { href: "/agency/jobs", label: "Jobs", icon: Briefcase },
@@ -56,8 +59,10 @@ export function AgencyNav({ role }: { role?: AgencyMemberRole | null }) {
   return (
     <nav className="px-2 flex-1 overflow-y-auto">
       <ul className="space-y-0.5">
-        {visible.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+        {visible.map(({ href, label, icon: Icon, exact }) => {
+          const active = exact
+            ? pathname === href
+            : pathname === href || pathname.startsWith(href + "/");
           return (
             <li key={href}>
               <Link

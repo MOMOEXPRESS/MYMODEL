@@ -97,72 +97,22 @@ export default async function RosterPage({
             />
           )
         ) : view === "grid" ? (
-          // First card spans 2x2 (worth four normal cards) — a "featured"
-          // hero spot that anchors the page.
-          <ul className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 auto-rows-fr gap-4">
-            {models.map((m, i) => {
+          // Every card is a large tile — equivalent to four of the old small
+          // cards. Half as many columns per breakpoint, bigger photos, richer
+          // captions (name + division + height overlaid on the hero).
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {models.map((m) => {
               const measurements = (m.measurements ?? {}) as Record<string, unknown>;
               const height =
                 typeof measurements.heightCm === "number"
                   ? `${measurements.heightCm} cm`
                   : null;
               const hero = m.portfolio[0];
-              const featured = i === 0;
-
-              if (featured) {
-                return (
-                  <li
-                    key={m.userId}
-                    className="col-span-2 row-span-2 group animate-card-in"
-                  >
-                    <Link
-                      href={`/agency/models/${m.userId}`}
-                      className="block h-full rounded-xl overflow-hidden border border-paper-border bg-paper-elevated hover:border-ink-subtle transition-all hover:-translate-y-0.5 hover:shadow-xl relative"
-                    >
-                      <div className="aspect-square w-full h-full relative bg-paper">
-                        {hero ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={hero.url}
-                            alt={modelDisplay(m)}
-                            loading="eager"
-                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent-soft/70 to-paper">
-                            <span className="font-serif text-7xl text-accent">
-                              {initials(modelDisplay(m))}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-ink/85 via-ink/40 to-transparent text-paper">
-                          <div className="text-[10px] uppercase tracking-[0.2em] opacity-80 mb-1">
-                            Featured
-                          </div>
-                          <div className="font-serif text-3xl tracking-tight leading-none">
-                            {modelDisplay(m)}
-                          </div>
-                          <div className="mt-2 text-xs opacity-90">
-                            {m.division.replace("_", " ")}
-                            {height && ` · ${height}`}
-                          </div>
-                        </div>
-
-                        <div className="absolute top-3 right-3">
-                          <StatusDot status={m.status} />
-                        </div>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              }
-
               return (
                 <li key={m.userId} className="group animate-card-in">
                   <Link
                     href={`/agency/models/${m.userId}`}
-                    className="block rounded-xl overflow-hidden border border-paper-border bg-paper-elevated hover:border-ink-subtle transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                    className="block rounded-2xl overflow-hidden border border-paper-border bg-paper-elevated hover:border-ink-subtle transition-all hover:-translate-y-1 hover:shadow-xl relative"
                   >
                     <div className="aspect-square bg-paper relative overflow-hidden">
                       {hero ? (
@@ -171,24 +121,28 @@ export default async function RosterPage({
                           src={hero.url}
                           alt={modelDisplay(m)}
                           loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent-soft/60 to-paper">
-                          <span className="font-serif text-3xl text-accent">
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent-soft/70 to-paper">
+                          <span className="font-serif text-7xl text-accent">
                             {initials(modelDisplay(m))}
                           </span>
                         </div>
                       )}
-                      <div className="absolute top-2 right-2">
-                        <StatusDot status={m.status} />
+
+                      <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent text-paper">
+                        <div className="font-serif text-2xl tracking-tight leading-none">
+                          {modelDisplay(m)}
+                        </div>
+                        <div className="mt-1.5 text-[11px] uppercase tracking-[0.15em] opacity-90">
+                          {m.division.replace("_", " ")}
+                          {height && ` · ${height}`}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-3">
-                      <div className="font-medium text-sm truncate">{modelDisplay(m)}</div>
-                      <div className="text-[10px] uppercase tracking-widest text-ink-subtle mt-0.5 truncate">
-                        {m.division.replace("_", " ")}
-                        {height && ` · ${height}`}
+
+                      <div className="absolute top-3 right-3">
+                        <StatusDot status={m.status} />
                       </div>
                     </div>
                   </Link>

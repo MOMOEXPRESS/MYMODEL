@@ -1,9 +1,9 @@
 "use client";
 
 import { ProspectStatus } from "@prisma/client";
-import { Plus, Trash2, Instagram, Mail, Phone } from "lucide-react";
+import { Plus, Trash2, Instagram, Mail, Phone, UserPlus } from "lucide-react";
 import { useState, useTransition } from "react";
-import { createProspect, deleteProspect, updateProspectStatus } from "./actions";
+import { createProspect, deleteProspect, updateProspectStatus, convertProspectToModel } from "./actions";
 import { cn, initials } from "@/lib/utils";
 
 type Prospect = {
@@ -110,6 +110,26 @@ function ProspectCard({ prospect: p }: { prospect: Prospect }) {
     });
   }
 
+  function sign() {
+    if (!p.email) {
+      alert("Add an email to the prospect first — it's how they'll claim their model account.");
+      return;
+    }
+    const division =
+      prompt(
+        `Sign ${p.name} to the roster. Pick a division:\nWOMEN, MEN, CURVE, KIDS, TALENTS, NEW_FACES`,
+        "WOMEN",
+      ) ?? "";
+    if (!division) return;
+    const fd = new FormData();
+    fd.set("prospectId", p.id);
+    fd.set("division", division.toUpperCase());
+    startTransition(async () => {
+      const res = await convertProspectToModel(fd);
+      if (!res.ok) alert(res.error);
+    });
+  }
+
   return (
     <div className="p-2 rounded-lg border border-paper-border bg-paper-elevated">
       <div className="flex items-start gap-2">
@@ -170,10 +190,21 @@ function ProspectCard({ prospect: p }: { prospect: Prospect }) {
           <option value="SIGNED">Signed</option>
           <option value="REJECTED">No</option>
         </select>
-        <button onClick={destroy} disabled={pending} className="ll-btn-ghost p-1">
+        <button onClick={destroy} disabled={pending} className="ll-btn-ghost p-1" title="Delete">
           <Trash2 size={11} />
         </button>
       </div>
+
+      {p.status !== "SIGNED" && p.status !== "REJECTED" && (
+        <button
+          onClick={sign}
+          disabled={pending}
+          className="mt-1.5 w-full ll-btn-primary text-[10px] py-1"
+          title="Convert to a real model on your roster"
+        >
+          <UserPlus size={11} /> Sign to roster
+        </button>
+      )}
     </div>
   );
 }
