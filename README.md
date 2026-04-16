@@ -103,9 +103,23 @@ Agency signup code: `PARIS001`.
   tenant-guarded and accept the same `imageIds=` query string so agency and
   model sides stay consistent. Available from the "Comp card" button on
   every model's detail page.
-- ⬜ Sprint 5 — Communication (1:1 + broadcasts)
-- ⬜ Sprint 6 — Job Room + files
-- ⬜ Sprint 7 — Polish + onboarding + notifications
+- ✅ **Sprint 5 — Communication.** 1:1 threads between agency staff and each
+  model (multi-staff threads per agency↔model pair, polled every 4s), plus
+  Broadcasts: compose a message with optional job attachment, pick N models,
+  send. Models tap Available / Can't make it on their home screen; agency sees
+  live Accepted / Declined / Pending tallies per broadcast.
+- ✅ **Sprint 6 — Job Room + files.** Each job has a Room with a call-sheet /
+  brief / lookbook file upload area (with 25 MB cap, CALLSHEET uploads
+  notifying every confirmed model), a schedule with date/time/location/notes,
+  and a chat pane. Models with any assignment on the job get read-only access
+  to files + schedule and full chat via /m/jobs/[jobId]. Rooms auto-create on
+  first CONFIRMED assignment.
+- ✅ **Sprint 7 — Onboarding + notifications.** Notification bell in both
+  shells with unread dot, polling /api/notifications, "mark all read". System
+  notifications generated on: new 1:1 message, new broadcast, call-sheet
+  posted. First-time agency dashboard carries a welcome banner with copy-link
+  for the signup URL prefilled with the agency's code. Agency nav now
+  surfaces Broadcasts as a first-class destination.
 
 ## Structure
 

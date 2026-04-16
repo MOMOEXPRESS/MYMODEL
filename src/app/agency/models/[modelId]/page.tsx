@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, FileDown } from "lucide-react";
+import { ArrowLeft, FileDown, MessageSquare } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { initials } from "@/lib/utils";
@@ -55,12 +55,20 @@ export default async function ModelDetailPage({
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <h1 className="font-serif text-3xl tracking-tight">{model.user.displayName}</h1>
-              <Link
-                href={`/agency/models/${model.userId}/compcard`}
-                className="ll-btn-secondary"
-              >
-                <FileDown size={14} /> Comp card
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/agency/messages/${model.userId}`}
+                  className="ll-btn-secondary"
+                >
+                  <MessageSquare size={14} /> Message
+                </Link>
+                <Link
+                  href={`/agency/models/${model.userId}/compcard`}
+                  className="ll-btn-secondary"
+                >
+                  <FileDown size={14} /> Comp card
+                </Link>
+              </div>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
               <span>{model.division.replace("_", " ")}</span>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { AgencyNav } from "@/components/agency-nav";
 import { LogoutButton } from "@/components/logout-button";
+import { NotificationBell } from "@/components/notification-bell";
 import { initials } from "@/lib/utils";
 
 export default async function AgencyLayout({
@@ -15,10 +16,11 @@ export default async function AgencyLayout({
     <div className="min-h-screen flex">
       {/* Sidebar */}
       <aside className="w-60 shrink-0 border-r border-paper-border bg-paper-elevated flex flex-col">
-        <div className="px-5 h-16 flex items-center border-b border-paper-border">
+        <div className="px-5 h-16 flex items-center justify-between border-b border-paper-border">
           <Link href="/agency" className="font-serif text-lg tracking-tight">
             LuxLane
           </Link>
+          <NotificationBell />
         </div>
 
         <div className="px-4 py-4">

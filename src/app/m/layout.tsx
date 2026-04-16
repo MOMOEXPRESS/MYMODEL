@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireModel } from "@/lib/auth-guards";
 import { ModelNav } from "@/components/model-nav";
 import { LogoutButton } from "@/components/logout-button";
+import { NotificationBell } from "@/components/notification-bell";
 import { initials } from "@/lib/utils";
 
 export default async function ModelLayout({
@@ -19,6 +20,7 @@ export default async function ModelLayout({
             LuxLane
           </Link>
           <div className="flex items-center gap-4">
+            <NotificationBell side="right" />
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-accent-soft text-accent text-xs font-medium flex items-center justify-center">
                 {initials(user.displayName)}

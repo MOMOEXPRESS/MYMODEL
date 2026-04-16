@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, CalendarRange, Briefcase, MessageSquare, Settings } from "lucide-react";
+import { Users, CalendarRange, Briefcase, MessageSquare, Radio, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -10,6 +10,7 @@ const items = [
   { href: "/agency/board", label: "Board", icon: CalendarRange },
   { href: "/agency/jobs", label: "Jobs", icon: Briefcase },
   { href: "/agency/messages", label: "Messages", icon: MessageSquare },
+  { href: "/agency/broadcasts", label: "Broadcasts", icon: Radio },
   { href: "/agency/settings", label: "Settings", icon: Settings },
 ] as const;
 

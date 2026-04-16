@@ -7,6 +7,7 @@ import { JobActions } from "./job-actions";
 import { JobEditForm } from "./job-edit-form";
 import { AssignmentsSection } from "./assignments-section";
 import { ContactsSection } from "./contacts-section";
+import { JobRoomSection } from "./job-room-section";
 
 export default async function JobDetail({
   params,
@@ -27,6 +28,15 @@ export default async function JobDetail({
         orderBy: [{ status: "asc" }, { proposedAt: "asc" }],
       },
       owner: { select: { displayName: true } },
+      room: {
+        include: {
+          files: {
+            orderBy: { createdAt: "desc" },
+            include: { uploadedBy: { select: { displayName: true } } },
+          },
+          schedule: { orderBy: { date: "asc" } },
+        },
+      },
     },
   });
   if (!job || job.agencyId !== user.agencyId) notFound();
@@ -107,6 +117,35 @@ export default async function JobDetail({
           />
 
           <ContactsSection jobId={job.id} contacts={job.contacts} />
+
+          <JobRoomSection
+            jobId={job.id}
+            meUserId={user.id}
+            files={
+              job.room
+                ? job.room.files.map((f) => ({
+                    id: f.id,
+                    name: f.name,
+                    type: f.type,
+                    url: f.url,
+                    uploadedByName: f.uploadedBy.displayName,
+                    uploadedAt: f.createdAt.toISOString(),
+                  }))
+                : []
+            }
+            schedule={
+              job.room
+                ? job.room.schedule.map((s) => ({
+                    id: s.id,
+                    title: s.title,
+                    date: s.date.toISOString().slice(0, 10),
+                    time: s.time,
+                    location: s.location,
+                    notes: s.notes,
+                  }))
+                : []
+            }
+          />
         </div>
 
         <div className="space-y-6">
