@@ -67,7 +67,7 @@ export async function GET(req: Request) {
   });
   const modelIds = models.map((m) => m.userId);
 
-  const [holds, availability] = await Promise.all([
+  const [holds, availability, assignments] = await Promise.all([
     prisma.hold.findMany({
       where: {
         modelId: { in: modelIds },
@@ -83,7 +83,15 @@ export async function GET(req: Request) {
         date: { gte: from, lte: to },
       },
     }),
+    prisma.jobAssignment.findMany({
+      where: { modelId: { in: modelIds } },
+      select: { jobId: true, modelId: true, callTime: true, wrapTime: true },
+    }),
   ]);
+  const timings = new Map<string, { callTime: string | null; wrapTime: string | null }>();
+  for (const a of assignments) {
+    timings.set(`${a.jobId}:${a.modelId}`, { callTime: a.callTime, wrapTime: a.wrapTime });
+  }
 
   const rowsById = new Map<string, BoardRow>();
   for (const m of models) {
@@ -101,12 +109,15 @@ export async function GET(req: Request) {
     const row = rowsById.get(h.modelId);
     if (!row) continue;
     const dateIso = iso(h.date);
+    const timing = timings.get(`${h.job.id}:${h.modelId}`);
     const cell = (row.holds[dateIso] ??= []);
     cell.push({
       jobId: h.job.id,
       jobTitle: h.job.title,
       jobStatus: h.job.status,
       status: holdToCellStatus(h.priority, h.job.status),
+      callTime: timing?.callTime ?? null,
+      wrapTime: timing?.wrapTime ?? null,
     });
   }
 

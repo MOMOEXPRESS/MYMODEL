@@ -46,27 +46,43 @@ const DIVISIONS = [
 
 const DAYS_OPTIONS = [14, 30, 60] as const;
 
-// Tailwind classes for each status. Kept inline so IntelliSense works.
+// Tailwind classes for each status cell (card-like mini-tiles instead of
+// solid paint blocks). Left edge carries a colored rail so you can scan
+// the Board at a glance; the card body stays on the elevated-paper tone.
 const STATUS_CLASS: Record<CellStatus, string> = {
-  AVAILABLE: "bg-white",
-  OPTION_3: "bg-board-option3",
-  OPTION_2: "bg-board-option2",
-  OPTION_1: "bg-board-option1 text-white",
-  CONFIRMED: "bg-board-confirmed text-white",
-  ON_JOB: "bg-board-onJob text-white",
-  TRAVELING: "bg-board-traveling text-white",
-  UNAVAILABLE: "bg-board-unavailable",
+  AVAILABLE: "",
+  OPTION_3: "bg-[#3F321A]/60 border-l-2 border-l-[#8A6A2A]",
+  OPTION_2: "bg-[#4A3815]/70 border-l-2 border-l-[#B07A22]",
+  OPTION_1: "bg-[#3A2410]/80 border-l-2 border-l-[#D4812B] text-white",
+  CONFIRMED: "bg-[#17331F] border-l-2 border-l-board-confirmed text-white",
+  ON_JOB: "bg-[#3A1511] border-l-2 border-l-board-onJob text-white",
+  TRAVELING: "bg-[#131E36] border-l-2 border-l-board-traveling text-white",
+  UNAVAILABLE:
+    "bg-[repeating-linear-gradient(135deg,#1F1F1F_0,#1F1F1F_4px,#0A0A0A_4px,#0A0A0A_8px)]",
 };
 
+// Human labels aligned with industry vernacular.  "1st Option" means first
+// dibs on the dates; 2nd is the backup; 3rd is a deeper backup.
 const STATUS_LABEL: Record<CellStatus, string> = {
-  AVAILABLE: "Available",
-  OPTION_3: "Option 3",
-  OPTION_2: "Option 2",
-  OPTION_1: "Option 1",
-  CONFIRMED: "Confirmed",
-  ON_JOB: "On job",
+  AVAILABLE: "Free",
+  OPTION_3: "3rd Option",
+  OPTION_2: "2nd Option",
+  OPTION_1: "1st Option",
+  CONFIRMED: "Booked",
+  ON_JOB: "On set",
   TRAVELING: "Traveling",
-  UNAVAILABLE: "Unavailable",
+  UNAVAILABLE: "Off",
+};
+
+const STATUS_HELP: Record<CellStatus, string> = {
+  AVAILABLE: "No hold — open for bookings.",
+  OPTION_3: "Third dibs — booker behind two others.",
+  OPTION_2: "Second option — backup to a 1st Option.",
+  OPTION_1: "First dibs on these dates.",
+  CONFIRMED: "Booked. Dates locked for this job.",
+  ON_JOB: "On set today — shoot in progress.",
+  TRAVELING: "Traveling for a job — not reachable for others.",
+  UNAVAILABLE: "Blocked out — personal, holiday, off the market.",
 };
 
 // ──────────────────────────────────────────────────────────────────────
@@ -535,6 +551,14 @@ function Row({
         const today = isToday(d);
         const weekEnd = ci % 7 === 6;
 
+        const primary = holds?.[0];
+        const callTime = primary?.callTime ?? null;
+        const jobPill = primary?.jobTitle
+          ? primary.jobTitle.length > 14
+            ? primary.jobTitle.slice(0, 12) + "…"
+            : primary.jobTitle
+          : null;
+
         return (
           <div
             key={d}
@@ -549,21 +573,34 @@ function Row({
             }}
             title={
               holds && holds.length > 0
-                ? `${STATUS_LABEL[status]} · ${holds.map((h) => h.jobTitle).join(", ")}`
+                ? `${STATUS_LABEL[status]} · ${holds
+                    .map((h) => h.jobTitle + (h.callTime ? ` · call ${h.callTime}` : ""))
+                    .join(", ")}`
                 : `${STATUS_LABEL[status]} · ${d}`
             }
             className={cn(
-              "relative h-10 border-b border-paper-border flex items-center justify-center text-[10px] cursor-crosshair transition-colors",
+              "relative h-12 border-b border-paper-border cursor-crosshair transition-colors",
+              status === "AVAILABLE" ? "" : "rounded-sm m-0.5 overflow-hidden",
               STATUS_CLASS[status],
-              weekend && status === "AVAILABLE" && "bg-paper",
+              weekend && status === "AVAILABLE" && "bg-white/[0.02]",
               weekEnd && "border-r border-paper-border",
               today && "ring-1 ring-inset ring-accent/50",
               selected && "outline outline-2 -outline-offset-1 outline-ink z-[2]",
             )}
           >
+            {status !== "AVAILABLE" && (
+              <div className="absolute inset-0 flex flex-col justify-center items-center text-[9px] leading-tight px-1 text-center">
+                {callTime && (
+                  <span className="font-mono text-[9px] opacity-90">{callTime}</span>
+                )}
+                {jobPill && (
+                  <span className="truncate w-full opacity-90">{jobPill}</span>
+                )}
+              </div>
+            )}
             {holds && holds.length > 1 && (
-              <span className="absolute top-0.5 right-0.5 text-[8px] opacity-70">
-                {holds.length}
+              <span className="absolute top-0.5 right-1 text-[8px] opacity-70 font-medium">
+                +{holds.length - 1}
               </span>
             )}
           </div>

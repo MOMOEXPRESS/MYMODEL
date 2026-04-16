@@ -73,7 +73,7 @@ async function loadBoard(opts: {
   });
   const modelIds = models.map((m) => m.userId);
 
-  const [holds, availability] = await Promise.all([
+  const [holds, availability, assignments] = await Promise.all([
     prisma.hold.findMany({
       where: { modelId: { in: modelIds }, date: { gte: opts.from, lte: opts.to } },
       include: { job: { select: { id: true, title: true, status: true } } },
@@ -81,7 +81,19 @@ async function loadBoard(opts: {
     prisma.availability.findMany({
       where: { modelId: { in: modelIds }, date: { gte: opts.from, lte: opts.to } },
     }),
+    // Per-(job, model) call/wrap times so we can decorate the Board cells.
+    prisma.jobAssignment.findMany({
+      where: { modelId: { in: modelIds } },
+      select: { jobId: true, modelId: true, callTime: true, wrapTime: true },
+    }),
   ]);
+  const callTimeMap = new Map<string, { callTime: string | null; wrapTime: string | null }>();
+  for (const a of assignments) {
+    callTimeMap.set(`${a.jobId}:${a.modelId}`, {
+      callTime: a.callTime,
+      wrapTime: a.wrapTime,
+    });
+  }
 
   const rows = new Map<string, BoardRow>();
   for (const m of models) {
@@ -98,11 +110,14 @@ async function loadBoard(opts: {
     const r = rows.get(h.modelId);
     if (!r) continue;
     const k = iso(h.date);
+    const timing = callTimeMap.get(`${h.job.id}:${h.modelId}`);
     (r.holds[k] ??= []).push({
       jobId: h.job.id,
       jobTitle: h.job.title,
       jobStatus: h.job.status,
       status: holdToCellStatus(h.priority, h.job.status),
+      callTime: timing?.callTime ?? null,
+      wrapTime: timing?.wrapTime ?? null,
     });
   }
   for (const a of availability) {

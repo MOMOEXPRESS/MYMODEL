@@ -397,6 +397,8 @@ const setAssignmentSchema = z.object({
   rate: z.coerce.number().min(0).max(10_000_000).optional().nullable(),
   rateType: z.nativeEnum(RateType).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
+  callTime: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+  wrapTime: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
   confirmConflicts: z.enum(["1"]).optional(),
 });
 
@@ -452,6 +454,8 @@ export async function updateAssignment(formData: FormData) {
       rate: d.rate ?? null,
       rateType: d.rateType ?? null,
       notes: d.notes ?? null,
+      callTime: d.callTime ?? null,
+      wrapTime: d.wrapTime ?? null,
       confirmedAt:
         d.status === AssignmentStatus.CONFIRMED ? (a.confirmedAt ?? new Date()) : null,
       declinedAt:

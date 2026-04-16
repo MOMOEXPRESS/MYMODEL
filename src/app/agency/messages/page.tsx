@@ -2,16 +2,33 @@ import Link from "next/link";
 import { MessageSquare, Radio } from "lucide-react";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { listAgencyConversations } from "@/lib/conversations";
+import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { initials } from "@/lib/utils";
+import { initials, modelDisplay } from "@/lib/utils";
+import { NewDmButton } from "./new-dm-button";
 
 export default async function MessagesPage() {
   const user = await requireAgencyStaff();
-  const convos = await listAgencyConversations({
-    agencyId: user.agencyId,
-    staffUserId: user.id,
-  });
+
+  const [convos, roster] = await Promise.all([
+    listAgencyConversations({
+      agencyId: user.agencyId,
+      staffUserId: user.id,
+    }),
+    prisma.model.findMany({
+      where: { agencyId: user.agencyId, status: "ACTIVE" },
+      include: {
+        user: { select: { displayName: true, email: true } },
+        portfolio: {
+          where: { kind: { in: ["BOOK", "POLAROID"] } },
+          orderBy: [{ kind: "asc" }, { order: "asc" }],
+          take: 1,
+        },
+      },
+      orderBy: { user: { displayName: "asc" } },
+    }),
+  ]);
 
   return (
     <div>
@@ -19,9 +36,20 @@ export default async function MessagesPage() {
         title="Messages"
         subtitle="1:1 threads with models and broadcasts."
         actions={
-          <Link href="/agency/broadcasts" className="ll-btn-secondary">
-            <Radio size={14} /> Broadcasts
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/agency/broadcasts" className="ll-btn-secondary">
+              <Radio size={14} /> Broadcasts
+            </Link>
+            <NewDmButton
+              roster={roster.map((m) => ({
+                userId: m.userId,
+                name: modelDisplay(m),
+                email: m.user.email,
+                division: m.division,
+                avatarUrl: m.portfolio[0]?.url ?? null,
+              }))}
+            />
+          </div>
         }
       />
       <div className="px-8 py-8">
@@ -29,7 +57,7 @@ export default async function MessagesPage() {
           <EmptyState
             icon={<MessageSquare size={20} />}
             title="No conversations yet"
-            body="Open any model's profile and click Message to start a thread."
+            body="Start a direct message from the New message button above."
           />
         ) : (
           <ul className="ll-card overflow-hidden divide-y divide-paper-border">

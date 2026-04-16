@@ -104,6 +104,8 @@ export default async function JobDetail({
               rate: a.rate,
               rateType: a.rateType,
               notes: a.notes,
+              callTime: a.callTime,
+              wrapTime: a.wrapTime,
               model: {
                 userId: a.model.userId,
                 division: a.model.division,

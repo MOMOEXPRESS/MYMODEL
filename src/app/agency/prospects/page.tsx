@@ -17,7 +17,12 @@ export default async function ProspectsPage() {
         eyebrow="Scouting"
         title="Prospects"
         subtitle="Track new-talent prospects from spotted to signed. Use the scouting link at open castings."
-        actions={<ScoutingLink signupCode={user.agency.signupCode} />}
+        actions={
+          <ScoutingLink
+            signupCode={user.agency.signupCode}
+            agencyName={user.agency.name}
+          />
+        }
       />
       <div className="px-8 pb-12">
         <ProspectsClient

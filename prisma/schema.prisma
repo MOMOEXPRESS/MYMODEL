@@ -335,6 +335,10 @@ model JobAssignment {
   rate             Float?
   rateType         RateType?
   notes            String?
+  // Per-model call time + wrap time (HH:mm strings, model-local). Surface on
+  // the Board so bookers see "7:00 → 16:00" alongside the option colour.
+  callTime         String?
+  wrapTime         String?
   proposedByUserId String
   proposedAt       DateTime         @default(now())
   confirmedAt      DateTime?

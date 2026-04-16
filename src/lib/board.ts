@@ -52,6 +52,8 @@ export type BoardHold = {
   jobStatus: string;
   status: CellStatus; // derived from HoldPriority
   rate?: number | null;
+  callTime?: string | null;
+  wrapTime?: string | null;
 };
 
 export type BoardAvailability = "UNAVAILABLE" | "TRAVELING";

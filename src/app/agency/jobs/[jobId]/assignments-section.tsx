@@ -13,6 +13,8 @@ type AssignmentRow = {
   rate: number | null;
   rateType: RateType | null;
   notes: string | null;
+  callTime: string | null;
+  wrapTime: string | null;
   model: {
     userId: string;
     displayName: string;
@@ -144,6 +146,8 @@ function AssignmentRow({
   const [rate, setRate] = useState<string>(
     assignment.rate != null ? String(assignment.rate) : "",
   );
+  const [callTime, setCallTime] = useState<string>(assignment.callTime ?? "");
+  const [wrapTime, setWrapTime] = useState<string>(assignment.wrapTime ?? "");
   const [error, setError] = useState<string | null>(null);
   const [conflicts, setConflicts] = useState<
     { jobId: string; jobTitle: string; dates: string[] }[] | null
@@ -154,6 +158,8 @@ function AssignmentRow({
     fd.set("assignmentId", assignment.id);
     fd.set("status", next);
     if (rate !== "") fd.set("rate", rate);
+    if (callTime) fd.set("callTime", callTime);
+    if (wrapTime) fd.set("wrapTime", wrapTime);
     if (confirmOverride) fd.set("confirmConflicts", "1");
     setError(null);
     setConflicts(null);
@@ -227,6 +233,29 @@ function AssignmentRow({
           className="ll-input w-24 text-xs"
         />
         <span>/ {effectiveRateType.toLowerCase()}</span>
+      </div>
+
+      <div className="flex items-center gap-1 text-xs text-ink-muted">
+        <span className="text-[10px] uppercase tracking-wider">Call</span>
+        <input
+          type="time"
+          value={callTime}
+          onChange={(e) => setCallTime(e.target.value)}
+          onBlur={() => {
+            if ((assignment.callTime ?? "") !== callTime) save(status);
+          }}
+          className="ll-input w-24 text-xs"
+        />
+        <span className="text-[10px] uppercase tracking-wider">Wrap</span>
+        <input
+          type="time"
+          value={wrapTime}
+          onChange={(e) => setWrapTime(e.target.value)}
+          onBlur={() => {
+            if ((assignment.wrapTime ?? "") !== wrapTime) save(status);
+          }}
+          className="ll-input w-24 text-xs"
+        />
       </div>
 
       <div className="ml-auto flex items-center gap-1">
