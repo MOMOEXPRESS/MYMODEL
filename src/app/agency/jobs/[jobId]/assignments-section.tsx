@@ -339,7 +339,7 @@ function AttachDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="ll-card w-full max-w-xl max-h-[80vh] flex flex-col shadow-2xl">
         <header className="px-5 pt-5 pb-3 flex items-center justify-between border-b border-paper-border">
           <div>

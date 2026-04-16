@@ -32,16 +32,20 @@ export function PageHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="relative border-b border-paper-border overflow-hidden">
-      {/* Decorative accent stripe at the top */}
+    <header className="relative border-b border-paper-border overflow-hidden bg-paper">
+      {/* Hairline accent stripe */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-accent via-accent/70 to-transparent"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-accent/60 via-ink/20 to-transparent"
       />
-      {/* Soft background wash so the band has visual weight */}
+      {/* Subtle radial glow + grid — gives the band shape without being loud */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-accent-soft/40 via-paper-elevated to-paper-elevated"
+        className="absolute inset-0 bg-grid opacity-60"
+      />
+      <div
+        aria-hidden
+        className="absolute -top-24 left-1/3 w-[560px] h-[320px] rounded-full bg-accent/10 blur-3xl pointer-events-none"
       />
       <div className="relative px-8 pt-10 pb-7">
         {breadcrumbs && breadcrumbs.length > 0 && (

@@ -99,7 +99,7 @@ export function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-ink/40 backdrop-blur-sm flex items-start justify-center pt-[15vh] px-4" onClick={() => setOpen(false)}>
+    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[15vh] px-4" onClick={() => setOpen(false)}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="ll-card shadow-2xl w-full max-w-xl overflow-hidden animate-card-in"

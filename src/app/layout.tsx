@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { CookieBanner } from "@/components/cookie-banner";
 import { getLocale } from "@/lib/i18n";
 import "./globals.css";
@@ -15,9 +17,23 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
+  // Geist injects `--font-geist-sans` and `--font-geist-mono` via the
+  // `.variable` classNames. We re-alias them to our generic `--font-sans` /
+  // `--font-mono` hooks via CSS below so Tailwind's font-family theme resolves.
   return (
-    <html lang={locale} className="h-full">
-      <body className="min-h-full bg-paper text-ink antialiased font-sans">
+    <html
+      lang={locale}
+      className={`h-full ${GeistSans.variable} ${GeistMono.variable}`}
+    >
+      <body
+        className="min-h-full bg-paper text-ink antialiased font-sans"
+        style={
+          {
+            "--font-sans": "var(--font-geist-sans)",
+            "--font-mono": "var(--font-geist-mono)",
+          } as React.CSSProperties
+        }
+      >
         {children}
         <CookieBanner />
       </body>

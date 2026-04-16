@@ -10,9 +10,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           </Link>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-12 prose prose-sm prose-stone">
-        {children}
-      </main>
+      <main className="mx-auto max-w-3xl px-6 py-12">{children}</main>
       <footer className="border-t border-paper-border mt-12">
         <div className="mx-auto max-w-3xl px-6 h-14 flex items-center justify-between text-xs text-ink-subtle">
           <Link href="/">&larr; Home</Link>

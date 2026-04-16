@@ -5,41 +5,72 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // LuxLane palette — editorial, neutral, confident.
+        // LuxLane v2 palette — black canvas, white "ink", Vercel-style.
+        //
+        // We keep the `ink` / `paper` vocabulary from v1 so every existing
+        // className keeps working, but their values are inverted:
+        //   paper     = #000 canvas
+        //   ink       = near-white text / foreground accents
+        //   accent    = warm bronze, paler than v1 so it reads on black
         ink: {
-          DEFAULT: "#0B0B0C",
-          muted: "#54545A",
-          subtle: "#8A8A92",
+          DEFAULT: "#EDEDED",
+          muted: "#A1A1A1",
+          subtle: "#666666",
         },
         paper: {
-          DEFAULT: "#FAFAF7",
-          elevated: "#FFFFFF",
-          border: "#E7E5DF",
+          DEFAULT: "#000000",
+          elevated: "#0A0A0A",
+          border: "#1F1F1F",
         },
         accent: {
-          DEFAULT: "#B8936A", // warm bronze
-          soft: "#EFE4D4",
+          DEFAULT: "#D4A87A",
+          soft: "#2A231B",
         },
-        // Board status colors — from brief §9
+        // Board status colors — rebalanced for a dark canvas. Same semantics
+        // as before (available / option 3 / 2 / 1 / confirmed / on-job /
+        // traveling / unavailable).
         board: {
-          available: "#FFFFFF",
-          option3: "#FFF6D6",
-          option2: "#FFE58A",
-          option1: "#F5A623",
-          confirmed: "#2E7D5B",
-          traveling: "#3B6FB6",
-          onJob: "#C0392B",
-          unavailable: "#D9D5CC",
+          available: "#0A0A0A",
+          option3: "#3F321A",
+          option2: "#7A5E1E",
+          option1: "#D4812B",
+          confirmed: "#3FA36B",
+          traveling: "#4A7FD6",
+          onJob: "#D34A3A",
+          unavailable: "#1F1F1F",
         },
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Helvetica", "Arial", "sans-serif"],
-        serif: ["ui-serif", "Georgia", "Cambria", "Times New Roman", "serif"],
+        sans: [
+          "var(--font-sans)",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Helvetica",
+          "Arial",
+          "sans-serif",
+        ],
+        serif: [
+          "var(--font-serif)",
+          "ui-serif",
+          "Georgia",
+          "Cambria",
+          "Times New Roman",
+          "serif",
+        ],
+        mono: [
+          "var(--font-mono)",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace",
+        ],
       },
       borderRadius: {
-        lg: "10px",
-        xl: "14px",
-        "2xl": "20px",
+        lg: "8px",
+        xl: "10px",
+        "2xl": "14px",
       },
     },
   },

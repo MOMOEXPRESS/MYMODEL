@@ -22,6 +22,7 @@
     "@vercel/blob": "^2.3.3",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
+    "geist": "^1.7.0",
     "jose": "^5.9.6",
     "lucide-react": "^0.460.0",
     "next": "^15.1.3",

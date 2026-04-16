@@ -4,24 +4,40 @@
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
   }
   html,
   body {
     height: 100%;
+    background-color: theme("colors.paper.DEFAULT");
+    color: theme("colors.ink.DEFAULT");
   }
   body {
     font-feature-settings: "cv11", "ss01", "ss03";
   }
   ::selection {
-    background: theme("colors.accent.soft");
-    color: theme("colors.ink.DEFAULT");
+    background: theme("colors.ink.DEFAULT");
+    color: theme("colors.paper.DEFAULT");
   }
   a,
   button {
     transition-property: background-color, color, border-color, box-shadow, opacity, transform;
     transition-duration: 140ms;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* Form elements inherit dark scheme */
+  input,
+  textarea,
+  select {
+    background-color: theme("colors.paper.elevated");
+    color: theme("colors.ink.DEFAULT");
+  }
+  /* Light-up the native date / time picker arrow on dark */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.85);
+    opacity: 0.6;
   }
 }
 
@@ -30,8 +46,9 @@
     @apply bg-paper-elevated border border-paper-border rounded-xl;
   }
   .ll-input {
-    @apply w-full rounded-lg border border-paper-border bg-paper-elevated px-3 py-2 text-sm
-           focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent;
+    @apply w-full rounded-lg border border-paper-border bg-paper-elevated px-3 py-2 text-sm text-ink
+           placeholder:text-ink-subtle
+           focus:outline-none focus:ring-1 focus:ring-ink/30 focus:border-ink/30;
   }
   .ll-label {
     @apply block text-xs uppercase tracking-wider text-ink-subtle mb-1.5 font-medium;
@@ -40,14 +57,15 @@
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
+  /* Primary = white on black (Vercel-style). */
   .ll-btn-primary {
-    @apply ll-btn bg-ink text-paper hover:bg-ink-muted active:translate-y-[0.5px];
+    @apply ll-btn bg-ink text-paper hover:bg-white active:translate-y-[0.5px];
   }
   .ll-btn-secondary {
-    @apply ll-btn border border-paper-border bg-paper-elevated hover:bg-paper active:translate-y-[0.5px];
+    @apply ll-btn border border-paper-border bg-paper-elevated text-ink hover:bg-white/5 active:translate-y-[0.5px];
   }
   .ll-btn-ghost {
-    @apply ll-btn text-ink-muted hover:text-ink hover:bg-paper-border/40;
+    @apply ll-btn text-ink-muted hover:text-ink hover:bg-white/5;
   }
 }
 
@@ -87,6 +105,14 @@
   }
   .animate-spin-slow {
     animation: spin-slow 900ms linear infinite;
+  }
+
+  /* Subtle decorative grid texture used behind hero bands */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 }
 

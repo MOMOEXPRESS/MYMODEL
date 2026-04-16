@@ -131,7 +131,7 @@ export default async function RosterPage({
                         </div>
                       )}
 
-                      <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent text-paper">
+                      <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/85 via-black/40 to-transparent text-white">
                         <div className="font-serif text-2xl tracking-tight leading-none">
                           {modelDisplay(m)}
                         </div>
