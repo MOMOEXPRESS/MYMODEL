@@ -52,6 +52,15 @@ function Composer({ roster, jobs }: { roster: RosterModel[]; jobs: JobLite[] }) 
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [division, setDivision] = useState<string>("");
+
+  // "Casting-call" mode — creating the broadcast also creates a Job and
+  // attaches the same picks as PROPOSED assignments.
+  const [createsJob, setCreatesJob] = useState(false);
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobType, setJobType] = useState("EDITORIAL");
+  const [jobStartDate, setJobStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [jobEndDate, setJobEndDate] = useState(new Date().toISOString().slice(0, 10));
+
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -83,8 +92,17 @@ function Composer({ roster, jobs }: { roster: RosterModel[]; jobs: JobLite[] }) 
     startTransition(async () => {
       const res = await createBroadcast({
         body: body.trim(),
-        jobId: jobId || undefined,
+        jobId: createsJob ? undefined : jobId || undefined,
         modelIds: Array.from(picked),
+        ...(createsJob
+          ? {
+              createsJob: "1" as const,
+              jobTitle: jobTitle.trim(),
+              jobType,
+              jobStartDate,
+              jobEndDate,
+            }
+          : {}),
       });
       if (!res.ok) setError(res.error);
       else {
@@ -92,6 +110,8 @@ function Composer({ roster, jobs }: { roster: RosterModel[]; jobs: JobLite[] }) 
         setBody("");
         setPicked(new Set());
         setJobId("");
+        setCreatesJob(false);
+        setJobTitle("");
       }
     });
   }
@@ -118,23 +138,95 @@ function Composer({ roster, jobs }: { roster: RosterModel[]; jobs: JobLite[] }) 
         className="ll-input mt-4"
       />
 
-      <div className="grid sm:grid-cols-2 gap-3 mt-3">
-        <select value={jobId} onChange={(e) => setJobId(e.target.value)} className="ll-input text-sm">
-          <option value="">Attach a job (optional)</option>
-          {jobs.map((j) => (
-            <option key={j.id} value={j.id}>
-              {j.title} ({j.start} → {j.end})
-            </option>
-          ))}
-        </select>
+      {/* Casting-call toggle — when on, the broadcast also creates a Job. */}
+      <label className="mt-3 flex items-start gap-2 p-3 border border-paper-border rounded-lg cursor-pointer hover:bg-white/[0.02] transition-colors">
+        <input
+          type="checkbox"
+          checked={createsJob}
+          onChange={(e) => setCreatesJob(e.target.checked)}
+          className="mt-0.5"
+        />
+        <div className="flex-1 text-sm">
+          <div className="font-medium">Create a job from this broadcast</div>
+          <div className="text-xs text-ink-muted mt-0.5">
+            Every model you pick lands on the new job as <em>Proposed</em>. When
+            they accept in-app, they auto-promote to <em>1st&nbsp;Option</em>.
+          </div>
+        </div>
+      </label>
 
-        <div className="flex gap-2">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search"
-            className="ll-input text-sm flex-1"
-          />
+      {createsJob ? (
+        <div className="mt-3 p-3 border border-paper-border rounded-lg bg-paper grid sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <label className="ll-label">Job title</label>
+            <input
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              placeholder='"Vogue Paris — July editorial"'
+              className="ll-input text-sm"
+            />
+          </div>
+          <div>
+            <label className="ll-label">Type</label>
+            <select
+              value={jobType}
+              onChange={(e) => setJobType(e.target.value)}
+              className="ll-input text-sm"
+            >
+              <option value="EDITORIAL">Editorial</option>
+              <option value="CAMPAIGN">Campaign</option>
+              <option value="RUNWAY">Runway</option>
+              <option value="FITTING">Fitting</option>
+              <option value="COMMERCIAL">Commercial</option>
+              <option value="EVENT">Event</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="ll-label">Start</label>
+              <input
+                type="date"
+                value={jobStartDate}
+                onChange={(e) => setJobStartDate(e.target.value)}
+                className="ll-input text-sm"
+              />
+            </div>
+            <div>
+              <label className="ll-label">End</label>
+              <input
+                type="date"
+                value={jobEndDate}
+                onChange={(e) => setJobEndDate(e.target.value)}
+                className="ll-input text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3">
+          <select
+            value={jobId}
+            onChange={(e) => setJobId(e.target.value)}
+            className="ll-input text-sm"
+          >
+            <option value="">Attach an existing job (optional)</option>
+            {jobs.map((j) => (
+              <option key={j.id} value={j.id}>
+                {j.title} ({j.start} → {j.end})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="grid sm:grid-cols-[1fr_auto] gap-2 mt-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search roster"
+          className="ll-input text-sm"
+        />
+        <div className="flex">
           <select
             value={division}
             onChange={(e) => setDivision(e.target.value)}
