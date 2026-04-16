@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { Prisma, Division, ModelStatus } from "@prisma/client";
+import { Users, LayoutGrid, List } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
-import { Users } from "lucide-react";
-import { initials } from "@/lib/utils";
+import { initials, cn } from "@/lib/utils";
 import { RosterFilters } from "./roster-filters";
 
 const DIVISIONS: Division[] = ["WOMEN", "MEN", "CURVE", "KIDS", "TALENTS", "NEW_FACES"];
 const STATUSES: ModelStatus[] = ["ACTIVE", "ON_LEAVE", "INACTIVE"];
+const VIEWS = ["grid", "list"] as const;
+type ViewMode = (typeof VIEWS)[number];
 
 export default async function RosterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; division?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; division?: string; status?: string; view?: string }>;
 }) {
   const user = await requireAgencyStaff();
   const sp = await searchParams;
@@ -26,6 +28,7 @@ export default async function RosterPage({
   const status = STATUSES.includes(sp.status as ModelStatus)
     ? (sp.status as ModelStatus)
     : undefined;
+  const view: ViewMode = VIEWS.includes(sp.view as ViewMode) ? (sp.view as ViewMode) : "grid";
 
   const where: Prisma.ModelWhereInput = {
     agencyId: user.agencyId,
@@ -46,7 +49,15 @@ export default async function RosterPage({
   const [models, totalCount] = await Promise.all([
     prisma.model.findMany({
       where,
-      include: { user: true },
+      include: {
+        user: true,
+        // One hero photo per model: prefer BOOK, fall back to POLAROID.
+        portfolio: {
+          where: { kind: { in: ["BOOK", "POLAROID"] } },
+          orderBy: [{ kind: "asc" }, { order: "asc" }],
+          take: 1,
+        },
+      },
       orderBy: { user: { displayName: "asc" } },
     }),
     prisma.model.count({ where: { agencyId: user.agencyId } }),
@@ -55,19 +66,22 @@ export default async function RosterPage({
   return (
     <div>
       <PageHeader
+        eyebrow={`Agency · ${user.agency.name}`}
         title="Roster"
-        subtitle={`${totalCount} ${totalCount === 1 ? "model" : "models"} on your roster.`}
+        subtitle={`${totalCount} ${totalCount === 1 ? "model" : "models"} on your books.`}
         actions={
-          <Link href="/agency/settings" className="ll-btn-secondary">
-            Invite models
-          </Link>
+          <div className="flex items-center gap-2">
+            <ViewToggle current={view} />
+            <Link href="/agency/settings" className="ll-btn-secondary">
+              Invite models
+            </Link>
+          </div>
         }
-      />
-      <div className="px-8 py-6">
+      >
         <RosterFilters defaultQ={q} division={division} status={status} />
-      </div>
+      </PageHeader>
 
-      <div className="px-8 pb-12">
+      <div className="px-8 py-8">
         {models.length === 0 ? (
           totalCount === 0 ? (
             <EmptyState
@@ -82,7 +96,55 @@ export default async function RosterPage({
               body="Try clearing the filters or the search."
             />
           )
+        ) : view === "grid" ? (
+          <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {models.map((m) => {
+              const measurements = (m.measurements ?? {}) as Record<string, unknown>;
+              const height =
+                typeof measurements.heightCm === "number"
+                  ? `${measurements.heightCm} cm`
+                  : null;
+              const hero = m.portfolio[0];
+              return (
+                <li key={m.userId} className="group animate-card-in">
+                  <Link
+                    href={`/agency/models/${m.userId}`}
+                    className="block rounded-xl overflow-hidden border border-paper-border bg-paper-elevated hover:border-ink-subtle transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                  >
+                    <div className="aspect-square bg-paper relative overflow-hidden">
+                      {hero ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={hero.url}
+                          alt={m.user.displayName}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent-soft/60 to-paper">
+                          <span className="font-serif text-3xl text-accent">
+                            {initials(m.user.displayName)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <StatusDot status={m.status} />
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <div className="font-medium text-sm truncate">{m.user.displayName}</div>
+                      <div className="text-[10px] uppercase tracking-widest text-ink-subtle mt-0.5 truncate">
+                        {m.division.replace("_", " ")}
+                        {height && ` · ${height}`}
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         ) : (
+          // Preserve the table view for power users.
           <div className="ll-card overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-paper border-b border-paper-border text-ink-subtle text-xs uppercase tracking-wider">
@@ -101,38 +163,50 @@ export default async function RosterPage({
                     typeof measurements.heightCm === "number"
                       ? `${measurements.heightCm} cm`
                       : "—";
+                  const hero = m.portfolio[0];
                   return (
-                    <tr key={m.userId} className="border-b border-paper-border last:border-0 hover:bg-paper/50">
+                    <tr
+                      key={m.userId}
+                      className="border-b border-paper-border last:border-0 hover:bg-paper/50"
+                    >
                       <td className="px-5 py-3">
                         <Link
                           href={`/agency/models/${m.userId}`}
                           className="flex items-center gap-3 group"
                         >
-                          <div className="w-8 h-8 rounded-full bg-accent-soft text-accent text-xs font-medium flex items-center justify-center">
-                            {initials(m.user.displayName)}
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-accent-soft shrink-0">
+                            {hero ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={hero.url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-accent text-xs font-medium">
+                                {initials(m.user.displayName)}
+                              </div>
+                            )}
                           </div>
                           <span className="font-medium group-hover:underline underline-offset-4">
                             {m.user.displayName}
                           </span>
                         </Link>
                       </td>
-                      <td className="px-5 py-3 text-ink-muted">{m.division.replace("_", " ")}</td>
+                      <td className="px-5 py-3 text-ink-muted">
+                        {m.division.replace("_", " ")}
+                      </td>
                       <td className="px-5 py-3">
                         <span className="inline-flex items-center gap-1.5 text-xs">
-                          <span
-                            className={
-                              m.status === "ACTIVE"
-                                ? "w-1.5 h-1.5 rounded-full bg-board-confirmed"
-                                : m.status === "ON_LEAVE"
-                                  ? "w-1.5 h-1.5 rounded-full bg-board-option1"
-                                  : "w-1.5 h-1.5 rounded-full bg-ink-subtle"
-                            }
-                          />
-                          {m.status.replace("_", " ").toLowerCase()}
+                          <StatusDot status={m.status} />
+                          <span>{m.status.replace("_", " ").toLowerCase()}</span>
                         </span>
                       </td>
                       <td className="px-5 py-3 text-ink-muted">{height}</td>
-                      <td className="px-5 py-3 text-ink-muted hidden md:table-cell">{m.user.email}</td>
+                      <td className="px-5 py-3 text-ink-muted hidden md:table-cell">
+                        {m.user.email}
+                      </td>
                     </tr>
                   );
                 })}
@@ -143,4 +217,56 @@ export default async function RosterPage({
       </div>
     </div>
   );
+}
+
+function StatusDot({ status }: { status: ModelStatus }) {
+  const color =
+    status === "ACTIVE"
+      ? "bg-board-confirmed"
+      : status === "ON_LEAVE"
+        ? "bg-board-option1"
+        : "bg-ink-subtle";
+  return (
+    <span
+      className={`w-2 h-2 rounded-full ring-2 ring-paper-elevated ${color}`}
+      title={status.toLowerCase()}
+    />
+  );
+}
+
+function ViewToggle({ current }: { current: ViewMode }) {
+  return (
+    <div className="flex rounded-lg border border-paper-border overflow-hidden">
+      <Link
+        href={`?${buildQuery({ view: "grid" })}`}
+        aria-current={current === "grid" ? "page" : undefined}
+        className={cn(
+          "px-2.5 py-1.5 text-xs flex items-center gap-1.5",
+          current === "grid"
+            ? "bg-ink text-paper"
+            : "bg-paper-elevated hover:bg-paper",
+        )}
+      >
+        <LayoutGrid size={13} /> Cards
+      </Link>
+      <Link
+        href={`?${buildQuery({ view: "list" })}`}
+        aria-current={current === "list" ? "page" : undefined}
+        className={cn(
+          "px-2.5 py-1.5 text-xs flex items-center gap-1.5 border-l border-paper-border",
+          current === "list"
+            ? "bg-ink text-paper"
+            : "bg-paper-elevated hover:bg-paper",
+        )}
+      >
+        <List size={13} /> List
+      </Link>
+    </div>
+  );
+}
+
+function buildQuery(patch: Record<string, string>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(patch)) sp.set(k, v);
+  return sp.toString();
 }

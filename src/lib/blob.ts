@@ -47,17 +47,30 @@ export async function uploadFile(
   const pathname = `${prefix}/${Date.now()}-${rand}-${safeName}`;
 
   if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(pathname, file, {
-      access: "public",
-      contentType: file.type || "application/octet-stream",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
-    return {
-      url: blob.url,
-      pathname: blob.pathname,
-      contentType: file.type || "application/octet-stream",
-      size: file.size,
-    };
+    try {
+      const blob = await put(pathname, file, {
+        access: "public",
+        contentType: file.type || "application/octet-stream",
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+      return {
+        url: blob.url,
+        pathname: blob.pathname,
+        contentType: file.type || "application/octet-stream",
+        size: file.size,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // Vercel Blob rejects `access: public` when the store itself is
+      // configured with "private access". Surface a fixable message.
+      if (/private store|public access on a private/i.test(msg)) {
+        throw new UploadError(
+          "Your Vercel Blob store is configured for private access, which doesn't work for images served via <img>. In Vercel → Storage → your Blob store → Settings, either switch the store to Public access, or create a new Blob store with Public selected and redeploy.",
+          "BLOB_PRIVATE_STORE",
+        );
+      }
+      throw err;
+    }
   }
 
   if (isLambda()) {
