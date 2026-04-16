@@ -16,6 +16,7 @@ import {
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { syncHoldsForJob, detectConflicts } from "@/lib/holds";
+import { logEvent } from "@/lib/audit";
 
 // ── Jobs ───────────────────────────────────────────────────────────
 
@@ -64,6 +65,16 @@ export async function createJob(formData: FormData) {
       currency: d.currency ?? user.agency.currency,
       status: JobStatus.OPEN,
     },
+  });
+
+  await logEvent({
+    agencyId: user.agencyId,
+    actorId: user.id,
+    actorName: user.displayName,
+    action: "job.created",
+    entityType: "Job",
+    entityId: job.id,
+    summary: `Created ${job.title}`,
   });
 
   revalidatePath("/agency/jobs");
@@ -147,10 +158,52 @@ export async function deleteJob(formData: FormData) {
   if (!job || job.agencyId !== user.agencyId) {
     return { ok: false as const, error: "Not found" };
   }
-  await prisma.job.delete({ where: { id: jobId } });
+  // Soft delete — Trash for 30 days, then the cron purges.
+  await prisma.job.update({
+    where: { id: jobId },
+    data: { deletedAt: new Date(), deletedById: user.id },
+  });
+  // Strip holds immediately so the Board reflects it. Assignments stay for
+  // audit; restoring the job brings everything back.
+  await prisma.hold.deleteMany({ where: { jobId } });
+  await logEvent({
+    agencyId: user.agencyId,
+    actorId: user.id,
+    actorName: user.displayName,
+    action: "job.deleted",
+    entityType: "Job",
+    entityId: jobId,
+    summary: `Deleted ${job.title}`,
+  });
   revalidatePath("/agency/jobs");
   revalidatePath("/agency/board");
   redirect("/agency/jobs");
+}
+
+export async function restoreJob(formData: FormData) {
+  const user = await requireAgencyStaff();
+  const jobId = String(formData.get("jobId") ?? "");
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job || job.agencyId !== user.agencyId) {
+    return { ok: false as const, error: "Not found" };
+  }
+  await prisma.job.update({
+    where: { id: jobId },
+    data: { deletedAt: null, deletedById: null },
+  });
+  await syncHoldsForJob(jobId);
+  await logEvent({
+    agencyId: user.agencyId,
+    actorId: user.id,
+    actorName: user.displayName,
+    action: "job.restored",
+    entityType: "Job",
+    entityId: jobId,
+    summary: `Restored ${job.title}`,
+  });
+  revalidatePath("/agency/jobs");
+  revalidatePath("/agency/board");
+  return { ok: true as const };
 }
 
 // ── Contacts ──────────────────────────────────────────────────────
@@ -293,6 +346,8 @@ export async function updateAssignment(formData: FormData) {
     }
   }
 
+  const before = { status: a.status, rate: a.rate, rateType: a.rateType };
+
   await prisma.jobAssignment.update({
     where: { id: d.assignmentId },
     data: {
@@ -308,6 +363,25 @@ export async function updateAssignment(formData: FormData) {
   });
 
   await syncHoldsForJob(a.jobId);
+
+  if (before.status !== d.status) {
+    const model = await prisma.user.findUnique({
+      where: { id: a.modelId },
+      select: { displayName: true },
+    });
+    await logEvent({
+      agencyId: user.agencyId,
+      actorId: user.id,
+      actorName: user.displayName,
+      action: "assignment.status_changed",
+      entityType: "JobAssignment",
+      entityId: a.id,
+      summary: `${model?.displayName ?? "Model"} → ${d.status
+        .replace("_", " ")
+        .toLowerCase()} on ${a.job.title}`,
+      diff: { before, after: { status: d.status, rate: d.rate ?? null, rateType: d.rateType ?? null } },
+    });
+  }
 
   // Auto-create Job Room when a job has its first CONFIRMED assignment.
   if (d.status === AssignmentStatus.CONFIRMED) {

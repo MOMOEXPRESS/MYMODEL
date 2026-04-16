@@ -29,6 +29,7 @@ export default async function JobsPage({
 
   const where: Prisma.JobWhereInput = {
     agencyId: user.agencyId,
+    deletedAt: null,
     ...(status ? { status } : {}),
   };
 
@@ -43,7 +44,7 @@ export default async function JobsPage({
     }),
     prisma.job.groupBy({
       by: ["status"],
-      where: { agencyId: user.agencyId },
+      where: { agencyId: user.agencyId, deletedAt: null },
       _count: { _all: true },
     }),
   ]);

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { RoomFileType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
-import { uploadFile } from "@/lib/blob";
+import { uploadFile, UploadError } from "@/lib/blob";
 
 async function assertAccess(jobId: string) {
   const actor = await getSessionUser();
@@ -62,9 +62,15 @@ export async function uploadRoomFile(formData: FormData) {
   ) as RoomFileType;
 
   const job = await prisma.job.findUnique({ where: { id: jobId }, select: { agencyId: true } });
-  const uploaded = await uploadFile(file, {
-    prefix: `agency/${job!.agencyId}/jobs/${jobId}`,
-  });
+  let uploaded;
+  try {
+    uploaded = await uploadFile(file, {
+      prefix: `agency/${job!.agencyId}/jobs/${jobId}`,
+    });
+  } catch (err) {
+    if (err instanceof UploadError) return { ok: false as const, error: err.message };
+    throw err;
+  }
   const roomId = await ensureRoom(jobId);
 
   await prisma.roomFile.create({

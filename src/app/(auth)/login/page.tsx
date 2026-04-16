@@ -11,6 +11,11 @@ export default function LoginPage() {
       </p>
       <LoginForm />
       <p className="mt-6 text-sm text-ink-muted">
+        <Link className="text-ink underline underline-offset-4" href="/forgot-password">
+          Forgot your password?
+        </Link>
+      </p>
+      <p className="mt-6 text-sm text-ink-muted">
         New agency? <Link className="text-ink underline underline-offset-4" href="/signup/agency">Create an account</Link>
       </p>
       <p className="mt-2 text-sm text-ink-muted">

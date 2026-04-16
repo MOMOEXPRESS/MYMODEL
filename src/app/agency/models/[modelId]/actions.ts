@@ -5,7 +5,7 @@ import { Division, DocumentType, ModelStatus, PortfolioKind, AvailabilityStatus 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireModelAccess } from "@/lib/model-access";
-import { uploadFile } from "@/lib/blob";
+import { uploadFile, UploadError } from "@/lib/blob";
 
 // ── stats / measurements ─────────────────────────────────────────────
 
@@ -97,7 +97,13 @@ export async function uploadPortfolioImage(formData: FormData) {
   const access = await requireModelAccess(modelId);
   if (!access.canEdit) return { ok: false as const, error: "Forbidden" };
 
-  const uploaded = await uploadFile(file, { prefix: `agency/${access.agencyId}/portfolio/${modelId}` });
+  let uploaded;
+  try {
+    uploaded = await uploadFile(file, { prefix: `agency/${access.agencyId}/portfolio/${modelId}` });
+  } catch (err) {
+    if (err instanceof UploadError) return { ok: false as const, error: err.message };
+    throw err;
+  }
 
   const max = await prisma.portfolioImage.aggregate({
     where: { modelId, kind },
@@ -156,7 +162,13 @@ export async function uploadDocument(formData: FormData) {
   // Models can upload identity docs for themselves but can't view each other's —
   // no restriction needed here since access is already confirmed.
 
-  const uploaded = await uploadFile(file, { prefix: `agency/${access.agencyId}/docs/${modelId}` });
+  let uploaded;
+  try {
+    uploaded = await uploadFile(file, { prefix: `agency/${access.agencyId}/docs/${modelId}` });
+  } catch (err) {
+    if (err instanceof UploadError) return { ok: false as const, error: err.message };
+    throw err;
+  }
 
   await prisma.modelDocument.create({
     data: {

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { ContractKind, ContractStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
-import { uploadFile } from "@/lib/blob";
+import { uploadFile, UploadError } from "@/lib/blob";
 
 const createSchema = z.object({
   title: z.string().min(1).max(200),
@@ -31,10 +31,15 @@ export async function createContract(formData: FormData) {
   let fileUrl: string | null = null;
   if (file instanceof File && file.size > 0) {
     if (file.size > 25 * 1024 * 1024) return { ok: false as const, error: "Max 25 MB" };
-    const uploaded = await uploadFile(file, {
-      prefix: `agency/${user.agencyId}/contracts`,
-    });
-    fileUrl = uploaded.url;
+    try {
+      const uploaded = await uploadFile(file, {
+        prefix: `agency/${user.agencyId}/contracts`,
+      });
+      fileUrl = uploaded.url;
+    } catch (err) {
+      if (err instanceof UploadError) return { ok: false as const, error: err.message };
+      throw err;
+    }
   }
 
   const contract = await prisma.contract.create({

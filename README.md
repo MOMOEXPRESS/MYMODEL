@@ -153,6 +153,26 @@ Agency signup code: `PARIS001`.
   - **Stripe Connect (#21) & YouSign:** placeholder fields on `Agency`
     (`stripeAccountId`) and the contract-sign flow is already token-based
     so a real YouSign envelope can be swapped in without UX changes.
+- ✅ **Reliability + business model.**
+  - **Billing:** Stripe Checkout + Customer Portal + webhook with three
+    plans (Starter €199 / Pro €399 / Scale €799), 14-day trial, plan
+    limits enforced on model signup.
+  - **Stripe Connect:** Express onboarding for agencies; when an invoice
+    is marked PAID we auto-generate `ModelPayout` rows (gross /
+    commission / net) per confirmed model. Agency → `/agency/payouts`;
+    model → `/m/earnings`.
+  - **Email (Resend):** Password reset, team invites, signing links.
+    Console fallback in dev.
+  - **Password reset:** `/forgot-password` → email → `/reset-password`.
+    Never leaks account presence. Rate-limited.
+  - **Rate limiting:** Upstash-backed sliding-window on login + signup +
+    forgot-password. In-memory fallback when no Upstash.
+  - **Background cron:** `/api/cron/overdue-invoices`,
+    `/api/cron/doc-expiry`, `/api/cron/purge-trash` — scheduled in
+    `vercel.json`, protected by `CRON_SECRET`.
+  - **Activity log + soft delete:** every important mutation goes through
+    `logEvent()` → `AuditEvent`; Jobs / Invoices / Contracts soft-delete
+    into a 30-day trash before the cron purges.
 
 ## Structure
 

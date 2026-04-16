@@ -5,7 +5,6 @@
 // high-quality talent directory. Intentionally low-key: designers and
 // brands search agencies by name, not by Instagram.
 
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";

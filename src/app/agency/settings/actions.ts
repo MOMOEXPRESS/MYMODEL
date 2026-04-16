@@ -7,6 +7,7 @@ import { AgencyMemberRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { hashPassword } from "@/lib/auth";
+import { sendEmail } from "@/lib/email";
 
 // ── Agency profile (incl. invoice fields) ──────────────────────
 
@@ -92,12 +93,20 @@ export async function createTeamInvite(formData: FormData) {
     },
   });
 
-  // No Resend wired up — print to server log so the owner can copy the link
-  // in dev. On Vercel the owner can grab it from the function logs.
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  console.log(
-    `[invite] email=${parsed.data.email} role=${parsed.data.role} ${origin}/signup/team?token=${token}`,
-  );
+  const link = `${origin}/signup/team?token=${token}`;
+  await sendEmail({
+    to: parsed.data.email,
+    subject: `You've been invited to ${user.agency.name} on LuxLane`,
+    text: `Hi,
+
+${user.displayName} invited you to join ${user.agency.name} on LuxLane as a ${parsed.data.role.toLowerCase()}.
+
+Accept the invite within the next 14 days:
+${link}
+
+— LuxLane`,
+  });
 
   revalidatePath("/agency/settings");
   return { ok: true as const, token };

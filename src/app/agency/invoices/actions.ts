@@ -6,6 +6,8 @@ import { z } from "zod";
 import { InvoiceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
+import { generatePayoutsForInvoice } from "@/lib/payouts";
+import { logEvent } from "@/lib/audit";
 
 async function nextInvoiceNumber(agencyId: string): Promise<string> {
   const year = new Date().getFullYear();
@@ -131,6 +133,30 @@ export async function setInvoiceStatus(formData: FormData) {
       paidAt: status === "PAID" ? new Date() : status === "SENT" ? null : invoice.paidAt,
     },
   });
+
+  if (status === "PAID") {
+    const created = await generatePayoutsForInvoice(id);
+    await logEvent({
+      agencyId: user.agencyId,
+      actorId: user.id,
+      actorName: user.displayName,
+      action: "invoice.paid",
+      entityType: "Invoice",
+      entityId: id,
+      summary: `${invoice.number} marked paid${created ? ` — ${created} model payout${created === 1 ? "" : "s"} queued` : ""}`,
+    });
+  } else {
+    await logEvent({
+      agencyId: user.agencyId,
+      actorId: user.id,
+      actorName: user.displayName,
+      action: `invoice.status_${status.toLowerCase()}`,
+      entityType: "Invoice",
+      entityId: id,
+      summary: `${invoice.number} → ${status.toLowerCase()}`,
+    });
+  }
+
   revalidatePath(`/agency/invoices/${id}`);
   revalidatePath("/agency/invoices");
   return { ok: true as const };

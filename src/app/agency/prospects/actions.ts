@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ProspectStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
-import { uploadFile } from "@/lib/blob";
+import { uploadFile, UploadError } from "@/lib/blob";
 
 const createSchema = z.object({
   name: z.string().min(1).max(120),
@@ -34,10 +34,15 @@ export async function createProspect(formData: FormData) {
     if (!file.type.startsWith("image/")) {
       return { ok: false as const, error: "Image only" };
     }
-    const uploaded = await uploadFile(file, {
-      prefix: `agency/${user.agencyId}/prospects`,
-    });
-    imageUrl = uploaded.url;
+    try {
+      const uploaded = await uploadFile(file, {
+        prefix: `agency/${user.agencyId}/prospects`,
+      });
+      imageUrl = uploaded.url;
+    } catch (err) {
+      if (err instanceof UploadError) return { ok: false as const, error: err.message };
+      throw err;
+    }
   }
 
   await prisma.prospect.create({

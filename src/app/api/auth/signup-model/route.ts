@@ -33,6 +33,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unknown agency code" }, { status: 404 });
   }
 
+  // Plan limits — only enforced when the agency is on a paid plan.
+  const { planLimits } = await import("@/lib/plans");
+  const { maxModels } = planLimits(agency.subscriptionPlan);
+  const current = await prisma.model.count({ where: { agencyId: agency.id } });
+  if (current >= maxModels) {
+    return NextResponse.json(
+      { error: "This agency is at its model limit — they need to upgrade." },
+      { status: 402 },
+    );
+  }
+
   const existing = await prisma.user.findUnique({ where: { email: data.email.toLowerCase() } });
   if (existing) {
     return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });

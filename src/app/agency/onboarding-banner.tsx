@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Copy, Check, Users, Briefcase } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function OnboardingBanner({
   agencyCode,
@@ -12,8 +12,11 @@ export function OnboardingBanner({
   agencyName: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const signupLink = origin ? `${origin}/signup/model?code=${agencyCode}` : `/signup/model?code=${agencyCode}`;
+  // Avoid hydration mismatch — origin is only known on the client.
+  const [signupLink, setSignupLink] = useState(`/signup/model?code=${agencyCode}`);
+  useEffect(() => {
+    setSignupLink(`${window.location.origin}/signup/model?code=${agencyCode}`);
+  }, [agencyCode]);
 
   async function copy(text: string) {
     try {

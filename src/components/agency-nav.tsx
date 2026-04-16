@@ -14,6 +14,9 @@ import {
   ShieldCheck,
   Sparkles,
   BarChart3,
+  CreditCard,
+  History,
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,10 +27,13 @@ const items = [
   { href: "/agency/messages", label: "Messages", icon: MessageSquare },
   { href: "/agency/broadcasts", label: "Broadcasts", icon: Radio },
   { href: "/agency/invoices", label: "Invoices", icon: Receipt },
+  { href: "/agency/payouts", label: "Payouts", icon: Banknote },
   { href: "/agency/contracts", label: "Contracts", icon: FilePenLine },
   { href: "/agency/compliance", label: "Compliance", icon: ShieldCheck },
   { href: "/agency/prospects", label: "Scouting", icon: Sparkles },
   { href: "/agency/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/agency/activity", label: "Activity", icon: History },
+  { href: "/agency/billing", label: "Billing", icon: CreditCard },
   { href: "/agency/settings", label: "Settings", icon: Settings },
 ] as const;
 

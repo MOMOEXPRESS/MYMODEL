@@ -2,5 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node scripts/vercel-build.mjs",
   "installCommand": "npm install --no-audit --no-fund",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "crons": [
+    { "path": "/api/cron/overdue-invoices", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/doc-expiry", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/purge-trash", "schedule": "0 5 * * *" }
+  ]
 }
