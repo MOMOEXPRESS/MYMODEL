@@ -87,7 +87,16 @@ Agency signup code: `PARIS001`.
   filter, live model search, prev/next/today nav, hover tooltips, drag-to-select
   rectangles across rows and columns, one-click bulk availability edits with
   optimistic UI. Powered by `GET /api/board` and `PATCH /api/board/cell`.
-- ⬜ Sprint 3 — Jobs + Assignments
+- ✅ **Sprint 3 — Jobs + Assignments.** Full Job CRUD (title, dates, location,
+  rate, brief, client contacts), status pipeline `DRAFT → OPEN → CONFIRMED →
+  IN_PROGRESS → DONE / CANCELLED`. Attach models from the roster with a
+  searchable multi-select dialog. Per-model assignment status
+  (`PROPOSED → OPTION_1/2/3 → CONFIRMED → DONE` / `DECLINED` / `RELEASED`) and
+  per-model rate overrides. Holds are auto-derived from assignments so the
+  Board lights up in amber/orange/green the instant you promote a model.
+  Non-blocking conflict detection warns when confirming a model already
+  CONFIRMED on another overlapping job. First CONFIRMED assignment auto-
+  creates the Job Room (used in Sprint 6).
 - ⬜ Sprint 4 — Comp card generator
 - ⬜ Sprint 5 — Communication (1:1 + broadcasts)
 - ⬜ Sprint 6 — Job Room + files
