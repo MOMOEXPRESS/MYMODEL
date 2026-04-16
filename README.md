@@ -97,7 +97,12 @@ Agency signup code: `PARIS001`.
   Non-blocking conflict detection warns when confirming a model already
   CONFIRMED on another overlapping job. First CONFIRMED assignment auto-
   creates the Job Room (used in Sprint 6).
-- ⬜ Sprint 4 — Comp card generator
+- ✅ **Sprint 4 — Comp card generator.** Pick up to 5 photos, first is the
+  hero; live HTML preview; one-click export to branded PDF
+  (`@react-pdf/renderer`) or PNG (`next/og` / Satori). Both routes are
+  tenant-guarded and accept the same `imageIds=` query string so agency and
+  model sides stay consistent. Available from the "Comp card" button on
+  every model's detail page.
 - ⬜ Sprint 5 — Communication (1:1 + broadcasts)
 - ⬜ Sprint 6 — Job Room + files
 - ⬜ Sprint 7 — Polish + onboarding + notifications
