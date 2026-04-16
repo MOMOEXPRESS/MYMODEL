@@ -4,6 +4,7 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import { requireModel } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import { JobRoomSection } from "@/app/agency/jobs/[jobId]/job-room-section";
+import { TravelSection } from "@/app/agency/jobs/[jobId]/travel-section";
 
 export default async function ModelJobDetail({
   params,
@@ -31,6 +32,10 @@ export default async function ModelJobDetail({
         },
       },
       contacts: { orderBy: { role: "asc" } },
+      travelItems: {
+        where: { OR: [{ modelId: null }, { modelId: user.id }] },
+        orderBy: { startAt: "asc" },
+      },
     },
   });
   if (!job || job.agencyId !== user.agencyId) notFound();
@@ -68,6 +73,29 @@ export default async function ModelJobDetail({
           <h2 className="font-medium">Brief</h2>
           <p className="mt-2 text-sm whitespace-pre-wrap">{job.brief}</p>
         </section>
+      )}
+
+      {job.travelItems.length > 0 && (
+        <div className="mt-6">
+          <TravelSection
+            jobId={job.id}
+            assignedModels={[]}
+            readOnly
+            items={job.travelItems.map((t) => ({
+              id: t.id,
+              type: t.type,
+              title: t.title,
+              description: t.description,
+              fromLocation: t.fromLocation,
+              toLocation: t.toLocation,
+              startAt: t.startAt?.toISOString() ?? null,
+              endAt: t.endAt?.toISOString() ?? null,
+              reference: t.reference,
+              modelId: t.modelId,
+              modelName: null,
+            }))}
+          />
+        </div>
       )}
 
       <div className="mt-6">

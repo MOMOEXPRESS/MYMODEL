@@ -120,6 +120,39 @@ Agency signup code: `PARIS001`.
   posted. First-time agency dashboard carries a welcome banner with copy-link
   for the signup URL prefilled with the agency's code. Agency nav now
   surfaces Broadcasts as a first-class destination.
+- ✅ **Tier 2 + Tier 3 expansion.**
+  - **Team members (#20):** invite/role flow, signup-by-token route
+    (`/signup/team?token=…`), per-row remove.
+  - **Doc expiry (#18):** `/agency/compliance` lists every expired or
+    <90-day-expiring document across the roster with days-past / days-until.
+  - **Travel (#13):** `TravelItem` schema + section on job detail with
+    flights/trains/hotels/transfers. Per-model or whole-job. Surfaced
+    read-only on the model's `/m/jobs/[id]`.
+  - **Invoices (#15):** French-compliant PDF with SIRET/TVA/penalty legal
+    footer, status (draft/sent/paid/overdue/cancelled), auto-generated
+    number (`FAC-YYYY-####`), job→invoice auto-line-items from confirmed
+    assignments, dashboard KPIs.
+  - **CSV export (#19):** `/api/invoices/export.csv` for
+    Pennylane/QuickBooks import.
+  - **Earnings (#16):** `/api/earnings/[modelId]/pdf?year&month` renders a
+    monthly statement — gross, commission, net — using the model's or
+    agency's commission %.
+  - **Contracts + in-app e-sig (#14):** upload PDF → send-for-signature →
+    public `/sign/[token]` page where the counter-party types their name.
+    Stub for YouSign (wire the real API keys later; audit trail and UX
+    stay the same).
+  - **Tear sheets (#17):** `/agency/models/[id]/tearsheets` lists completed
+    jobs + book photos as an auto-CV.
+  - **Prospects / Scouting (#23):** kanban-lite pipeline with
+    Spotted → Contacted → Meeting → Signed / No, photo upload, notes.
+  - **Public agency site (#22):** toggle in settings → `/a/<signupCode>`
+    shows the ACTIVE roster by division with hero book photos. 5-minute
+    edge cache.
+  - **Analytics (#26):** 6-month revenue bars, top earners, underused
+    models (no DONE jobs in 90 days), option→confirm conversion rate.
+  - **Stripe Connect (#21) & YouSign:** placeholder fields on `Agency`
+    (`stripeAccountId`) and the contract-sign flow is already token-based
+    so a real YouSign envelope can be swapped in without UX changes.
 
 ## Structure
 

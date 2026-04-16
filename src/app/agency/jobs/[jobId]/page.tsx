@@ -8,6 +8,7 @@ import { JobEditForm } from "./job-edit-form";
 import { AssignmentsSection } from "./assignments-section";
 import { ContactsSection } from "./contacts-section";
 import { JobRoomSection } from "./job-room-section";
+import { TravelSection } from "./travel-section";
 
 export default async function JobDetail({
   params,
@@ -28,6 +29,7 @@ export default async function JobDetail({
         orderBy: [{ status: "asc" }, { proposedAt: "asc" }],
       },
       owner: { select: { displayName: true } },
+      travelItems: { orderBy: { startAt: "asc" } },
       room: {
         include: {
           files: {
@@ -117,6 +119,30 @@ export default async function JobDetail({
           />
 
           <ContactsSection jobId={job.id} contacts={job.contacts} />
+
+          <TravelSection
+            jobId={job.id}
+            assignedModels={job.assignments.map((a) => ({
+              userId: a.model.userId,
+              displayName: a.model.user.displayName,
+            }))}
+            items={job.travelItems.map((t) => {
+              const m = job.assignments.find((a) => a.model.userId === t.modelId);
+              return {
+                id: t.id,
+                type: t.type,
+                title: t.title,
+                description: t.description,
+                fromLocation: t.fromLocation,
+                toLocation: t.toLocation,
+                startAt: t.startAt?.toISOString() ?? null,
+                endAt: t.endAt?.toISOString() ?? null,
+                reference: t.reference,
+                modelId: t.modelId,
+                modelName: m?.model.user.displayName ?? null,
+              };
+            })}
+          />
 
           <JobRoomSection
             jobId={job.id}

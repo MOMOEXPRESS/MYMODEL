@@ -29,15 +29,31 @@ model Agency {
   logoUrl                  String?
   defaultCommissionPercent Float    @default(20)
   currency                 String   @default("EUR")
+  // Agency legal + billing info (French SIRET, VAT, banking details for invoices).
+  legalName                String?
+  addressLine              String?
+  postalCode               String?
+  siret                    String?
+  vatNumber                String?
+  iban                     String?
+  bic                      String?
+  // Public website toggle — when true, /a/[signupCode] is reachable.
+  publicSiteEnabled        Boolean  @default(false)
+  // Stripe Connect placeholder (Tier 3 stub — stores the Connect account id when wired up).
+  stripeAccountId          String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
-  users      User[]
-  members    AgencyMember[]
-  models     Model[]
-  jobs       Job[]
-  broadcasts Broadcast[]
-  invites    AgencyInvite[]
+  users       User[]
+  members     AgencyMember[]
+  models      Model[]
+  jobs        Job[]
+  broadcasts  Broadcast[]
+  invites     AgencyInvite[]
+  teamInvites TeamInvite[]
+  invoices    Invoice[]
+  contracts   Contract[]
+  prospects   Prospect[]
 
   @@index([signupCode])
 }
@@ -256,6 +272,8 @@ model Job {
   holds       Hold[]
   room        JobRoom?
   broadcasts  Broadcast[]
+  travelItems TravelItem[]
+  invoices    Invoice[]
 
   @@index([agencyId, status])
   @@index([agencyId, startDate])
@@ -508,4 +526,182 @@ model AgencyInvite {
   agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@index([agencyId])
+}
+
+// ───────────────────────────────────────────────────────────
+// Tier 2/3 — Team, Travel, Invoices, Contracts, Prospects
+// ───────────────────────────────────────────────────────────
+
+// Team member invite (agency staff). Consumed at signup to bypass the
+// model signup code and drop the user straight into AgencyMember.
+model TeamInvite {
+  id         String           @id @default(cuid())
+  agencyId   String
+  email      String
+  role       AgencyMemberRole @default(BOOKER)
+  token      String           @unique
+  expiresAt  DateTime?
+  consumedAt DateTime?
+  createdAt  DateTime         @default(now())
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+  @@index([email])
+}
+
+// Travel items attached to a job. Surfaced in the job room and in the
+// model's schedule. Model is optional — e.g. a shared hotel applies to
+// everyone on the job.
+enum TravelType {
+  FLIGHT
+  TRAIN
+  HOTEL
+  TRANSFER
+  CAR
+  OTHER
+}
+
+model TravelItem {
+  id           String     @id @default(cuid())
+  jobId        String
+  modelId      String?
+  type         TravelType
+  title        String
+  description  String?    @db.Text
+  fromLocation String?
+  toLocation   String?
+  startAt      DateTime?
+  endAt        DateTime?
+  reference    String?
+  createdAt    DateTime   @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([modelId])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  agencyId        String
+  jobId           String?
+  number          String
+  issuedAt        DateTime      @default(now())
+  dueAt           DateTime?
+  clientName      String
+  clientCompany   String?
+  clientAddress   String?       @db.Text
+  clientVatNumber String?
+  subtotal        Float
+  taxRate         Float         @default(20)
+  taxAmount       Float
+  total           Float
+  currency        String        @default("EUR")
+  status          InvoiceStatus @default(DRAFT)
+  sentAt          DateTime?
+  paidAt          DateTime?
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  agency    Agency            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  job       Job?              @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  lineItems InvoiceLineItem[]
+
+  @@unique([agencyId, number])
+  @@index([agencyId, status])
+  @@index([jobId])
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float
+  total       Float
+  modelId     String?
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+enum ContractKind {
+  MODEL_AGENCY
+  BOOKING
+  CLIENT
+  OTHER
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  SIGNED
+  DECLINED
+  CANCELLED
+}
+
+model Contract {
+  id         String         @id @default(cuid())
+  agencyId   String
+  title      String
+  kind       ContractKind
+  fileUrl    String?
+  modelId    String?
+  jobId      String?
+  status     ContractStatus @default(DRAFT)
+  sentAt     DateTime?
+  signedAt   DateTime?
+  signedName String?
+  signedIp   String?
+  sigToken   String?        @unique
+  notes      String?        @db.Text
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId, status])
+  @@index([modelId])
+  @@index([jobId])
+}
+
+enum ProspectStatus {
+  NEW
+  CONTACTED
+  MEETING_BOOKED
+  SIGNED
+  REJECTED
+}
+
+model Prospect {
+  id              String         @id @default(cuid())
+  agencyId        String
+  name            String
+  email           String?
+  phone           String?
+  instagramHandle String?
+  city            String?
+  notes           String?        @db.Text
+  source          String?
+  status          ProspectStatus @default(NEW)
+  imageUrl        String?
+  createdByUserId String
+  convertedUserId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId, status])
 }

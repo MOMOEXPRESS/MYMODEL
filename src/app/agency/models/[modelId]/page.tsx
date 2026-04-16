@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, FileDown, MessageSquare } from "lucide-react";
+import { ArrowLeft, FileDown, MessageSquare, Receipt, FileText } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { initials } from "@/lib/utils";
@@ -55,7 +55,7 @@ export default async function ModelDetailPage({
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <h1 className="font-serif text-3xl tracking-tight">{model.user.displayName}</h1>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Link
                   href={`/agency/messages/${model.userId}`}
                   className="ll-btn-secondary"
@@ -68,6 +68,22 @@ export default async function ModelDetailPage({
                 >
                   <FileDown size={14} /> Comp card
                 </Link>
+                <Link
+                  href={`/agency/models/${model.userId}/tearsheets`}
+                  className="ll-btn-secondary"
+                >
+                  <FileText size={14} /> Tear sheets
+                </Link>
+                <a
+                  href={`/api/earnings/${model.userId}/pdf?year=${new Date().getUTCFullYear()}&month=${
+                    new Date().getUTCMonth() + 1
+                  }`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ll-btn-secondary"
+                >
+                  <Receipt size={14} /> Earnings
+                </a>
               </div>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
