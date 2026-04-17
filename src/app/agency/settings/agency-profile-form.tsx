@@ -18,6 +18,7 @@ type Agency = {
   iban: string;
   bic: string;
   publicSiteEnabled: boolean;
+  cities: string[];
 };
 
 export function AgencyProfileForm({
@@ -128,6 +129,17 @@ export function AgencyProfileForm({
           <label className="ll-label">BIC</label>
           <input name="bic" defaultValue={agency.bic} disabled={readOnly} className="ll-input" />
         </div>
+      </div>
+
+      <div className="pt-3 border-t border-paper-border">
+        <label className="ll-label">Operational cities <span className="text-ink-subtle normal-case">(comma-separated, for multi-city agencies)</span></label>
+        <input
+          name="cities"
+          defaultValue={agency.cities.join(", ")}
+          placeholder="Paris, Milan, London"
+          disabled={readOnly}
+          className="ll-input"
+        />
       </div>
 
       <h3 className="text-sm font-medium pt-3 border-t border-paper-border">Public website</h3>

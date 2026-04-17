@@ -21,9 +21,12 @@ type JobShape = {
   usageMedia: string[];
   usageExpiresAt: string | null;
   exclusivityCategory: string | null;
+  clientId: string | null;
 };
 
-export function JobEditForm({ job }: { job: JobShape }) {
+type ClientOption = { id: string; name: string; companyName: string | null };
+
+export function JobEditForm({ job, clients }: { job: JobShape; clients: ClientOption[] }) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +165,18 @@ export function JobEditForm({ job }: { job: JobShape }) {
           placeholder='"Perfume / LVMH", "Denim"'
           className="ll-input"
         />
+      </div>
+
+      <div>
+        <label className="ll-label">Client <span className="text-ink-subtle normal-case">(portal access)</span></label>
+        <select name="clientId" defaultValue={job.clientId ?? ""} className="ll-input">
+          <option value="">— none —</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}{c.companyName ? ` · ${c.companyName}` : ""}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

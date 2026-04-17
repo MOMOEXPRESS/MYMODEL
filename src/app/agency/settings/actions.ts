@@ -25,6 +25,7 @@ const profileSchema = z.object({
   iban: z.string().max(64).optional().nullable(),
   bic: z.string().max(24).optional().nullable(),
   publicSiteEnabled: z.string().optional(),
+  cities: z.string().max(400).optional().nullable(),
 });
 
 export async function updateAgencyProfile(formData: FormData) {
@@ -55,6 +56,12 @@ export async function updateAgencyProfile(formData: FormData) {
       iban: d.iban ?? null,
       bic: d.bic ?? null,
       publicSiteEnabled: d.publicSiteEnabled === "on",
+      cities: d.cities
+        ? d.cities
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
     },
   });
   revalidatePath("/agency/settings");

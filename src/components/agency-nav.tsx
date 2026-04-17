@@ -21,6 +21,8 @@ import {
   Banknote,
   Trash2,
   FileText,
+  Building2,
+  CalendarCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { can, type Action } from "@/lib/permissions";
@@ -47,6 +49,8 @@ const items: NavItem[] = [
   { href: "/agency/contracts", label: "Contracts", icon: FilePenLine, gate: "contract.create" },
   { href: "/agency/compliance", label: "Compliance", icon: ShieldCheck, gate: "compliance.view" },
   { href: "/agency/prospects", label: "Scouting", icon: Sparkles, gate: "prospect.edit" },
+  { href: "/agency/castings", label: "Castings", icon: CalendarCheck, gate: "prospect.edit" },
+  { href: "/agency/clients", label: "Clients", icon: Building2 },
   { href: "/agency/analytics", label: "Analytics", icon: BarChart3, gate: "analytics.view" },
   { href: "/agency/activity", label: "Activity", icon: History, gate: "activity.view" },
   { href: "/agency/trash", label: "Trash", icon: Trash2, gate: "job.delete" },

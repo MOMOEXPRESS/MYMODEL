@@ -39,6 +39,7 @@ export default async function MyCardPage() {
         <div>
           <MeasurementsForm
             modelId={model.userId}
+            selfView
             model={{
               division: model.division,
               status: model.status,
@@ -46,6 +47,9 @@ export default async function MyCardPage() {
               commissionPercent: model.commissionPercent,
               exclusions: model.exclusions,
               measurements,
+              baseCity: model.baseCity,
+              motherAgencyName: model.motherAgencyName,
+              motherAgencyCommissionPercent: model.motherAgencyCommissionPercent,
             }}
           />
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { AssignmentStatus, Division, RateType } from "@prisma/client";
-import { Plus, UserPlus, X, Trash2, AlertTriangle, Check, MessageSquare, FileCheck, MapPinned } from "lucide-react";
+import { AssignmentStatus, ClientReactionType, Division, RateType } from "@prisma/client";
+import { Plus, UserPlus, X, Trash2, AlertTriangle, Check, MessageSquare, FileCheck, MapPinned, Flag, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { attachModelsToJob, removeAssignment, updateAssignment, respondToCounterOffer } from "../actions";
@@ -19,6 +19,8 @@ type AssignmentRow = {
   modelRateNote: string | null;
   callsheetReadAt: string | null;
   checkedInAt: string | null;
+  clientReaction: ClientReactionType | null;
+  clientReactionNote: string | null;
   model: {
     userId: string;
     displayName: string;
@@ -396,7 +398,7 @@ function AssignmentRow({
         </div>
       )}
 
-      {(assignment.callsheetReadAt || assignment.checkedInAt) && (
+      {(assignment.callsheetReadAt || assignment.checkedInAt || assignment.clientReaction) && (
         <div className="w-full mt-1 flex flex-wrap gap-3 text-[10px] text-ink-muted">
           {assignment.callsheetReadAt && (
             <span className="inline-flex items-center gap-1">
@@ -411,6 +413,17 @@ function AssignmentRow({
                 hour: "2-digit",
                 minute: "2-digit",
               })}
+            </span>
+          )}
+          {assignment.clientReaction === "APPROVE" && (
+            <span className="inline-flex items-center gap-1 text-board-confirmed">
+              <ThumbsUp size={11} /> Client approved
+            </span>
+          )}
+          {assignment.clientReaction === "FLAG" && (
+            <span className="inline-flex items-center gap-1 text-red-400">
+              <Flag size={11} /> Client flagged
+              {assignment.clientReactionNote ? ` — ${assignment.clientReactionNote}` : ""}
             </span>
           )}
         </div>

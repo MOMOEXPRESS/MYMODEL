@@ -124,6 +124,9 @@ export default async function ModelDetailPage({
               commissionPercent: model.commissionPercent,
               exclusions: model.exclusions,
               measurements,
+              baseCity: model.baseCity,
+              motherAgencyName: model.motherAgencyName,
+              motherAgencyCommissionPercent: model.motherAgencyCommissionPercent,
             }}
           />
         </div>

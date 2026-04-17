@@ -24,10 +24,14 @@ export function RosterFilters({
   defaultQ,
   division,
   status,
+  city,
+  cities,
 }: {
   defaultQ: string;
   division?: Division;
   status?: ModelStatus;
+  city?: string;
+  cities: string[];
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -58,7 +62,7 @@ export function RosterFilters({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  const hasFilters = Boolean(q || division || status);
+  const hasFilters = Boolean(q || division || status || city);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -88,6 +92,15 @@ export function RosterFilters({
         placeholder="All statuses"
         options={STATUSES}
       />
+
+      {cities.length > 1 && (
+        <Select
+          value={city ?? ""}
+          onChange={(v) => update({ city: v || undefined })}
+          placeholder="All cities"
+          options={cities.map((c) => ({ value: c, label: c }))}
+        />
+      )}
 
       {hasFilters && (
         <button

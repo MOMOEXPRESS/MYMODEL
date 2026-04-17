@@ -16,6 +16,9 @@ const measurementsSchema = z.object({
   stageName: z.string().max(80).optional().nullable(),
   commissionPercent: z.coerce.number().min(0).max(100).optional().nullable(),
   exclusions: z.string().optional().default(""), // comma-separated
+  baseCity: z.string().max(80).optional().nullable(),
+  motherAgencyName: z.string().max(120).optional().nullable(),
+  motherAgencyCommissionPercent: z.coerce.number().min(0).max(100).optional().nullable(),
   heightCm: z.coerce.number().int().min(100).max(230).optional().nullable(),
   bustCm: z.coerce.number().int().min(50).max(150).optional().nullable(),
   waistCm: z.coerce.number().int().min(40).max(150).optional().nullable(),
@@ -74,15 +77,26 @@ export async function saveMeasurements(formData: FormData) {
     });
   }
 
+  // Only agency staff can edit commission + mother agency fields.
+  const adminOnly =
+    access.actor === "AGENCY_STAFF"
+      ? {
+          commissionPercent: data.commissionPercent ?? null,
+          motherAgencyName: data.motherAgencyName?.trim() || null,
+          motherAgencyCommissionPercent: data.motherAgencyCommissionPercent ?? null,
+        }
+      : {};
+
   await prisma.model.update({
     where: { userId: data.modelId },
     data: {
       division: data.division,
       status: data.status,
       stageName: data.stageName?.trim() || null,
-      commissionPercent: data.commissionPercent ?? null,
+      baseCity: data.baseCity?.trim() || null,
       exclusions,
       measurements,
+      ...adminOnly,
     },
   });
 

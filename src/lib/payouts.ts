@@ -24,25 +24,32 @@ export async function generatePayoutsForInvoice(invoiceId: string): Promise<numb
   const modelLines = invoice.lineItems.filter((li) => li.modelId);
   if (modelLines.length === 0) return 0;
 
-  // Per-model commission resolution.
+  // Per-model commission + mother-agency split resolution.
   const modelIds = Array.from(new Set(modelLines.map((li) => li.modelId!)));
   const models = await prisma.model.findMany({
     where: { userId: { in: modelIds } },
-    select: { userId: true, commissionPercent: true },
+    select: {
+      userId: true,
+      commissionPercent: true,
+      motherAgencyName: true,
+      motherAgencyCommissionPercent: true,
+    },
   });
-  const commissionByModel = new Map<string, number>(
-    models.map((m) => [
-      m.userId,
-      m.commissionPercent ?? invoice.agency.defaultCommissionPercent,
-    ]),
-  );
+  const infoByModel = new Map(models.map((m) => [m.userId, m]));
 
   let created = 0;
   for (const li of modelLines) {
-    const commissionPct = commissionByModel.get(li.modelId!) ?? invoice.agency.defaultCommissionPercent;
+    const m = infoByModel.get(li.modelId!);
+    const commissionPct = m?.commissionPercent ?? invoice.agency.defaultCommissionPercent;
     const gross = li.total;
     const commission = gross * (commissionPct / 100);
-    const net = gross - commission;
+    // Mother-agency referral split comes out of the model's net.
+    const motherPct = m?.motherAgencyCommissionPercent ?? 0;
+    const motherCut = (gross - commission) * (motherPct / 100);
+    const net = gross - commission - motherCut;
+    const note = motherCut > 0 && m?.motherAgencyName
+      ? `Mother-agency split ${motherPct}% to ${m.motherAgencyName}: ${motherCut.toFixed(2)} ${invoice.currency}`
+      : null;
     await prisma.modelPayout.create({
       data: {
         agencyId: invoice.agencyId,
@@ -53,6 +60,7 @@ export async function generatePayoutsForInvoice(invoiceId: string): Promise<numb
         commission,
         net,
         currency: invoice.currency,
+        note,
       },
     });
     created++;

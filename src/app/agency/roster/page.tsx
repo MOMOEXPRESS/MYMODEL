@@ -16,7 +16,7 @@ type ViewMode = (typeof VIEWS)[number];
 export default async function RosterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; division?: string; status?: string; view?: string }>;
+  searchParams: Promise<{ q?: string; division?: string; status?: string; view?: string; city?: string }>;
 }) {
   const user = await requireAgencyStaff();
   const sp = await searchParams;
@@ -28,12 +28,30 @@ export default async function RosterPage({
   const status = STATUSES.includes(sp.status as ModelStatus)
     ? (sp.status as ModelStatus)
     : undefined;
+  const city = sp.city?.trim() || undefined;
   const view: ViewMode = VIEWS.includes(sp.view as ViewMode) ? (sp.view as ViewMode) : "grid";
+
+  // Cities dropdown sources: agency.cities if the owner set them, plus any
+  // distinct baseCity values already in the roster.
+  const rosterCities = await prisma.model.findMany({
+    where: { agencyId: user.agencyId, baseCity: { not: null } },
+    select: { baseCity: true },
+    distinct: ["baseCity"],
+  });
+  const cities = Array.from(
+    new Set(
+      [
+        ...(user.agency.cities ?? []),
+        ...rosterCities.map((r) => r.baseCity).filter((c): c is string => Boolean(c)),
+      ].filter(Boolean),
+    ),
+  ).sort();
 
   const where: Prisma.ModelWhereInput = {
     agencyId: user.agencyId,
     ...(division ? { division } : {}),
     ...(status ? { status } : {}),
+    ...(city ? { baseCity: city } : {}),
     ...(q
       ? {
           user: {
@@ -78,7 +96,7 @@ export default async function RosterPage({
           </div>
         }
       >
-        <RosterFilters defaultQ={q} division={division} status={status} />
+        <RosterFilters defaultQ={q} division={division} status={status} city={city} cities={cities} />
       </PageHeader>
 
       <div className="px-8 py-8">

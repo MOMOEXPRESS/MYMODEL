@@ -55,6 +55,7 @@ export default async function SettingsPage() {
             iban: user.agency.iban ?? "",
             bic: user.agency.bic ?? "",
             publicSiteEnabled: user.agency.publicSiteEnabled,
+            cities: user.agency.cities ?? [],
           }}
           readOnly={!isOwner}
         />

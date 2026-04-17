@@ -41,6 +41,7 @@ const createJobSchema = z.object({
   usageMedia: z.string().max(400).optional().nullable(), // comma-separated
   usageExpiresAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   exclusivityCategory: z.string().max(120).optional().nullable(),
+  clientId: z.string().cuid().optional().or(z.literal("").transform(() => undefined)).nullable(),
 });
 
 function splitCsv(raw: string | null | undefined): string[] {
@@ -92,6 +93,7 @@ export async function createJob(formData: FormData) {
       usageMedia: splitCsv(d.usageMedia),
       usageExpiresAt: d.usageExpiresAt ? new Date(d.usageExpiresAt + "T00:00:00.000Z") : null,
       exclusivityCategory: d.exclusivityCategory?.trim() || null,
+      clientId: d.clientId ?? null,
     },
   });
 
@@ -155,6 +157,7 @@ export async function updateJob(formData: FormData) {
       usageMedia: splitCsv(d.usageMedia),
       usageExpiresAt: d.usageExpiresAt ? new Date(d.usageExpiresAt + "T00:00:00.000Z") : null,
       exclusivityCategory: d.exclusivityCategory?.trim() || null,
+      clientId: d.clientId ?? null,
     },
   });
 

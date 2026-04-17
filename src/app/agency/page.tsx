@@ -42,6 +42,7 @@ export default async function AgencyHome() {
     recentlyConfirmed,
     paidInvoices6mo,
     completedJobs6mo,
+    clientJobs,
   ] = await Promise.all([
     prisma.model.count({ where: { agencyId: user.agencyId } }),
     prisma.model.count({ where: { agencyId: user.agencyId, status: "ACTIVE" } }),
@@ -129,6 +130,26 @@ export default async function AgencyHome() {
         },
       },
     }),
+    // Rebook candidates: clients who've had ≥2 jobs with us and haven't
+    // booked anything in the last 120 days. Gives the booker a reminder to
+    // reach out. We pull jobs + client joined and group in memory.
+    prisma.job.findMany({
+      where: {
+        agencyId: user.agencyId,
+        deletedAt: null,
+        clientId: { not: null },
+        status: { in: ["DONE", "CONFIRMED", "IN_PROGRESS"] },
+      },
+      select: {
+        id: true,
+        title: true,
+        clientId: true,
+        endDate: true,
+        client: { select: { id: true, name: true, companyName: true } },
+      },
+      orderBy: { endDate: "desc" },
+      take: 200,
+    }),
   ]);
 
   // Build the 6-month revenue series for the mini-chart.
@@ -149,6 +170,34 @@ export default async function AgencyHome() {
   }
   const revenue6mo = months.reduce((s, m) => s + m.amount, 0);
   const maxMonth = Math.max(1, ...months.map((m) => m.amount));
+
+  // Rebook suggestions: group jobs by client, count + last-touch date. Clients
+  // with ≥2 jobs and > 120d since their last wrap are our candidates.
+  const byClient = new Map<
+    string,
+    { clientId: string; name: string; companyName: string | null; count: number; lastEnd: Date }
+  >();
+  for (const j of clientJobs) {
+    if (!j.client) continue;
+    const k = j.client.id;
+    const existing = byClient.get(k);
+    if (existing) {
+      existing.count += 1;
+      if (j.endDate > existing.lastEnd) existing.lastEnd = j.endDate;
+    } else {
+      byClient.set(k, {
+        clientId: j.client.id,
+        name: j.client.name,
+        companyName: j.client.companyName,
+        count: 1,
+        lastEnd: j.endDate,
+      });
+    }
+  }
+  const rebookCandidates = Array.from(byClient.values())
+    .filter((c) => c.count >= 2 && Date.now() - c.lastEnd.getTime() > 120 * 86400 * 1000)
+    .sort((a, b) => a.lastEnd.getTime() - b.lastEnd.getTime())
+    .slice(0, 5);
 
   const isFresh = modelCount === 0 && jobCount === 0;
   const greeting = greet(today.getHours());
@@ -303,6 +352,39 @@ export default async function AgencyHome() {
               )}
             </Card>
           </div>
+
+          {rebookCandidates.length > 0 && (
+            <Card
+              title="Rebook candidates"
+              link="/agency/clients"
+              icon={<History size={14} />}
+            >
+              <ul className="divide-y divide-paper-border">
+                {rebookCandidates.map((c) => {
+                  const daysSince = Math.floor(
+                    (Date.now() - c.lastEnd.getTime()) / 86400000,
+                  );
+                  return (
+                    <li key={c.clientId} className="py-2.5 flex items-center gap-3 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{c.name}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-ink-subtle">
+                          {c.count} jobs · last {daysSince}d ago
+                          {c.companyName ? ` · ${c.companyName}` : ""}
+                        </div>
+                      </div>
+                      <Link
+                        href={`/agency/jobs/new?clientId=${c.clientId}`}
+                        className="ll-btn-ghost text-xs"
+                      >
+                        New job <ArrowRight size={11} />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
+          )}
 
           <Card
             title="Recently confirmed"

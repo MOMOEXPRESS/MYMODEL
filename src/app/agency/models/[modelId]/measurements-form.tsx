@@ -11,9 +11,20 @@ type Model = {
   commissionPercent: number | null;
   exclusions: string[];
   measurements: Record<string, unknown>;
+  baseCity?: string | null;
+  motherAgencyName?: string | null;
+  motherAgencyCommissionPercent?: number | null;
 };
 
-export function MeasurementsForm({ modelId, model }: { modelId: string; model: Model }) {
+type ModelFormProps = {
+  modelId: string;
+  model: Model;
+  // Pass true when editing as the model themselves — we hide the
+  // agency-only fields (commission, mother agency) on /m/card.
+  selfView?: boolean;
+};
+
+export function MeasurementsForm({ modelId, model, selfView = false }: ModelFormProps) {
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,18 +80,56 @@ export function MeasurementsForm({ modelId, model }: { modelId: string; model: M
         </select>
       </div>
 
+      {!selfView && (
+        <div>
+          <label className="ll-label">Commission % <span className="text-ink-subtle normal-case">(blank = agency default)</span></label>
+          <input
+            type="number"
+            name="commissionPercent"
+            defaultValue={model.commissionPercent ?? ""}
+            min={0}
+            max={100}
+            step="0.1"
+            className="ll-input"
+          />
+        </div>
+      )}
+
       <div>
-        <label className="ll-label">Commission % <span className="text-ink-subtle normal-case">(blank = agency default)</span></label>
+        <label className="ll-label">Base city</label>
         <input
-          type="number"
-          name="commissionPercent"
-          defaultValue={model.commissionPercent ?? ""}
-          min={0}
-          max={100}
-          step="0.1"
+          name="baseCity"
+          defaultValue={model.baseCity ?? ""}
+          placeholder="Paris"
           className="ll-input"
         />
       </div>
+
+      {!selfView && (
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <div>
+            <label className="ll-label">Mother agency</label>
+            <input
+              name="motherAgencyName"
+              defaultValue={model.motherAgencyName ?? ""}
+              placeholder="Select, Milan"
+              className="ll-input"
+            />
+          </div>
+          <div className="w-24">
+            <label className="ll-label">Split %</label>
+            <input
+              type="number"
+              name="motherAgencyCommissionPercent"
+              defaultValue={model.motherAgencyCommissionPercent ?? ""}
+              min={0}
+              max={100}
+              step="0.1"
+              className="ll-input"
+            />
+          </div>
+        </div>
+      )}
 
       <hr className="border-paper-border" />
 

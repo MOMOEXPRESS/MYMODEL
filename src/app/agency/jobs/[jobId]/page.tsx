@@ -71,6 +71,13 @@ export default async function JobDetail({
     orderBy: { user: { displayName: "asc" } },
   });
 
+  // Clients dropdown for the edit form.
+  const clients = await prisma.client.findMany({
+    where: { agencyId: user.agencyId },
+    select: { id: true, name: true, companyName: true },
+    orderBy: { name: "asc" },
+  });
+
   return (
     <div>
       <div className="px-8 pt-8">
@@ -131,6 +138,8 @@ export default async function JobDetail({
               modelRateNote: a.modelRateNote,
               callsheetReadAt: a.callsheetReadAt?.toISOString() ?? null,
               checkedInAt: a.checkedInAt?.toISOString() ?? null,
+              clientReaction: a.clientReaction,
+              clientReactionNote: a.clientReactionNote,
               model: {
                 userId: a.model.userId,
                 division: a.model.division,
@@ -235,7 +244,9 @@ export default async function JobDetail({
               usageMedia: job.usageMedia,
               usageExpiresAt: job.usageExpiresAt ? iso(job.usageExpiresAt) : null,
               exclusivityCategory: job.exclusivityCategory,
+              clientId: job.clientId,
             }}
+            clients={clients}
           />
         </div>
       </div>
