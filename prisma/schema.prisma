@@ -241,6 +241,7 @@ enum JobType {
   FITTING
   COMMERCIAL
   EVENT
+  TEST
 }
 
 enum JobStatus {
@@ -273,6 +274,18 @@ model Job {
   rateType     RateType  @default(DAY)
   status       JobStatus @default(DRAFT)
   ownerUserId  String
+  // Usage rights (scope of the talent licence sold to the client).
+  // territory: "FR", "EU", "Worldwide", etc. media: printed array of
+  // ["Print","Digital","OOH","Social","TV","PR"]. duration: human-readable
+  // ("6 months", "1 year"). usageExpiresAt: computed cutoff for compliance.
+  usageTerritory String?
+  usageDuration  String?
+  usageMedia     String[] @default([])
+  usageExpiresAt DateTime?
+  // Optional exclusivity category — if set, any overlapping confirmed job in
+  // the same category for the same model raises a conflict alert
+  // (e.g. "Perfume / LVMH", "Denim").
+  exclusivityCategory String?
   // Soft delete — rows live in Trash for 30 days before cron purges.
   deletedAt    DateTime?
   deletedById  String?
@@ -288,6 +301,7 @@ model Job {
   broadcasts  Broadcast[]
   travelItems TravelItem[]
   invoices    Invoice[]
+  outfits     OutfitOption[]
 
   @@index([agencyId, status])
   @@index([agencyId, startDate])
@@ -339,6 +353,16 @@ model JobAssignment {
   // the Board so bookers see "7:00 → 16:00" alongside the option colour.
   callTime         String?
   wrapTime         String?
+  // Model counter-offer — proposed from /m/jobs/[id]. Booker sees it on the
+  // job page and either accepts (sets rate = modelProposedRate and clears
+  // the counter) or rejects (clears the counter + pings the model).
+  modelProposedRate Float?
+  modelRateNote    String?
+  // Callsheet confirmation — stamped when the model taps "I've read this"
+  // on the latest callsheet attached to the job.
+  callsheetReadAt  DateTime?
+  // Day-of check-in — stamped when the model taps "I'm on set" on shoot day.
+  checkedInAt      DateTime?
   proposedByUserId String
   proposedAt       DateTime         @default(now())
   confirmedAt      DateTime?
@@ -792,4 +816,59 @@ model ModelPayout {
   @@index([agencyId, status])
   @@index([modelId, status])
   @@index([jobId])
+}
+
+// ───────────────────────────────────────────────────────────
+// Tier A/B additions — look boards, measurement history
+// ───────────────────────────────────────────────────────────
+
+// Point-in-time snapshot of a Model.measurements JSON. Written whenever an
+// agency staff member overwrites measurements so the history is preserved
+// (models grow / lose weight / season to season changes matter on comp cards).
+model MeasurementSnapshot {
+  id            String   @id @default(cuid())
+  modelId       String
+  measurements  Json
+  takenByUserId String
+  takenAt       DateTime @default(now())
+
+  @@index([modelId, takenAt])
+}
+
+// Look board — outfits uploaded by the stylist/booker for a job. Each model
+// on the job can react (APPROVE / FLAG) with an optional note. Keeps the
+// fitting conversation on-platform instead of WhatsApp DMs.
+model OutfitOption {
+  id        String   @id @default(cuid())
+  jobId     String
+  title     String
+  imageUrl  String
+  notes     String?  @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  job       Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reactions OutfitReaction[]
+
+  @@index([jobId, order])
+}
+
+enum OutfitReactionType {
+  APPROVE
+  FLAG
+}
+
+model OutfitReaction {
+  id        String             @id @default(cuid())
+  optionId  String
+  modelId   String
+  reaction  OutfitReactionType
+  note      String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  option OutfitOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, modelId])
+  @@index([modelId])
 }

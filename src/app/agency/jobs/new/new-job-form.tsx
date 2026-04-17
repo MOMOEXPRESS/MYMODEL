@@ -43,6 +43,7 @@ export function NewJobForm({ defaultCurrency }: { defaultCurrency: string }) {
             <option value="FITTING">Fitting</option>
             <option value="COMMERCIAL">Commercial</option>
             <option value="EVENT">Event</option>
+            <option value="TEST">Test</option>
           </select>
         </div>
         <div>

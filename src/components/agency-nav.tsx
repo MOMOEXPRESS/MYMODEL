@@ -20,6 +20,7 @@ import {
   History,
   Banknote,
   Trash2,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { can, type Action } from "@/lib/permissions";
@@ -40,6 +41,7 @@ const items: NavItem[] = [
   { href: "/agency/jobs", label: "Jobs", icon: Briefcase },
   { href: "/agency/messages", label: "Messages", icon: MessageSquare },
   { href: "/agency/broadcasts", label: "Broadcasts", icon: Radio, gate: "broadcast.send" },
+  { href: "/agency/pitch", label: "Pitch deck", icon: FileText },
   { href: "/agency/invoices", label: "Invoices", icon: Receipt, gate: "invoice.create" },
   { href: "/agency/payouts", label: "Payouts", icon: Banknote, gate: "payout.mark_paid" },
   { href: "/agency/contracts", label: "Contracts", icon: FilePenLine, gate: "contract.create" },

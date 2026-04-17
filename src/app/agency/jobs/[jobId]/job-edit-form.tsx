@@ -16,6 +16,11 @@ type JobShape = {
   defaultRate: number | null;
   rateType: RateType;
   currency: string;
+  usageTerritory: string | null;
+  usageDuration: string | null;
+  usageMedia: string[];
+  usageExpiresAt: string | null;
+  exclusivityCategory: string | null;
 };
 
 export function JobEditForm({ job }: { job: JobShape }) {
@@ -56,6 +61,7 @@ export function JobEditForm({ job }: { job: JobShape }) {
           <option value="FITTING">Fitting</option>
           <option value="COMMERCIAL">Commercial</option>
           <option value="EVENT">Event</option>
+          <option value="TEST">Test</option>
         </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -104,6 +110,58 @@ export function JobEditForm({ job }: { job: JobShape }) {
       <div>
         <label className="ll-label">Brief</label>
         <textarea name="brief" defaultValue={job.brief ?? ""} rows={5} className="ll-input" />
+      </div>
+
+      <div className="pt-2 border-t border-paper-border">
+        <div className="text-[10px] uppercase tracking-wider text-ink-subtle mb-2">Usage rights</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="ll-label">Territory</label>
+            <input
+              name="usageTerritory"
+              defaultValue={job.usageTerritory ?? ""}
+              placeholder="FR, EU, Worldwide"
+              className="ll-input"
+            />
+          </div>
+          <div>
+            <label className="ll-label">Duration</label>
+            <input
+              name="usageDuration"
+              defaultValue={job.usageDuration ?? ""}
+              placeholder="6 months, 1 year"
+              className="ll-input"
+            />
+          </div>
+        </div>
+        <div className="mt-3">
+          <label className="ll-label">Media <span className="text-ink-subtle normal-case">(comma-separated)</span></label>
+          <input
+            name="usageMedia"
+            defaultValue={(job.usageMedia ?? []).join(", ")}
+            placeholder="Print, Digital, OOH, Social"
+            className="ll-input"
+          />
+        </div>
+        <div className="mt-3">
+          <label className="ll-label">Expiry</label>
+          <input
+            type="date"
+            name="usageExpiresAt"
+            defaultValue={job.usageExpiresAt ?? ""}
+            className="ll-input"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="ll-label">Exclusivity category <span className="text-ink-subtle normal-case">(optional)</span></label>
+        <input
+          name="exclusivityCategory"
+          defaultValue={job.exclusivityCategory ?? ""}
+          placeholder='"Perfume / LVMH", "Denim"'
+          className="ll-input"
+        />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

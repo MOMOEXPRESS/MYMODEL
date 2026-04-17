@@ -59,6 +59,21 @@ export async function saveMeasurements(formData: FormData) {
     .map((s) => s.trim())
     .filter(Boolean);
 
+  // Snapshot prior measurements so history is preserved before overwrite.
+  const existing = await prisma.model.findUnique({
+    where: { userId: data.modelId },
+    select: { measurements: true },
+  });
+  if (existing?.measurements) {
+    await prisma.measurementSnapshot.create({
+      data: {
+        modelId: data.modelId,
+        measurements: existing.measurements as object,
+        takenByUserId: access.userId,
+      },
+    });
+  }
+
   await prisma.model.update({
     where: { userId: data.modelId },
     data: {

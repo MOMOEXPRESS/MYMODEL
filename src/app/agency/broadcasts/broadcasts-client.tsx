@@ -179,6 +179,7 @@ function Composer({ roster, jobs }: { roster: RosterModel[]; jobs: JobLite[] }) 
               <option value="FITTING">Fitting</option>
               <option value="COMMERCIAL">Commercial</option>
               <option value="EVENT">Event</option>
+              <option value="TEST">Test</option>
             </select>
           </div>
           <div className="grid grid-cols-2 gap-2">

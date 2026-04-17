@@ -6,6 +6,7 @@
   "crons": [
     { "path": "/api/cron/overdue-invoices", "schedule": "0 3 * * *" },
     { "path": "/api/cron/doc-expiry", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/purge-trash", "schedule": "0 5 * * *" }
+    { "path": "/api/cron/purge-trash", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/stale-options", "schedule": "0 9 * * *" }
   ]
 }

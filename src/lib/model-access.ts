@@ -12,6 +12,7 @@ export type ModelAccess = {
   agencyId: string;
   canEdit: boolean;
   actor: "AGENCY_STAFF" | "MODEL";
+  userId: string;
 };
 
 export async function requireModelAccess(modelUserId: string): Promise<ModelAccess> {
@@ -31,6 +32,7 @@ export async function requireModelAccess(modelUserId: string): Promise<ModelAcce
       agencyId: model.agencyId,
       canEdit: true,
       actor: "AGENCY_STAFF",
+      userId: actor.id,
     };
   }
 
@@ -40,6 +42,7 @@ export async function requireModelAccess(modelUserId: string): Promise<ModelAcce
       agencyId: model.agencyId,
       canEdit: true,
       actor: "MODEL",
+      userId: actor.id,
     };
   }
 

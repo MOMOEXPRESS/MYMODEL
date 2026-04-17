@@ -1,10 +1,10 @@
 "use client";
 
 import { AssignmentStatus, Division, RateType } from "@prisma/client";
-import { Plus, UserPlus, X, Trash2, AlertTriangle, Check } from "lucide-react";
+import { Plus, UserPlus, X, Trash2, AlertTriangle, Check, MessageSquare, FileCheck, MapPinned } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import { attachModelsToJob, removeAssignment, updateAssignment } from "../actions";
+import { attachModelsToJob, removeAssignment, updateAssignment, respondToCounterOffer } from "../actions";
 import { cn, initials } from "@/lib/utils";
 
 type AssignmentRow = {
@@ -15,6 +15,10 @@ type AssignmentRow = {
   notes: string | null;
   callTime: string | null;
   wrapTime: string | null;
+  modelProposedRate: number | null;
+  modelRateNote: string | null;
+  callsheetReadAt: string | null;
+  checkedInAt: string | null;
   model: {
     userId: string;
     displayName: string;
@@ -152,25 +156,42 @@ function AssignmentRow({
   const [conflicts, setConflicts] = useState<
     { jobId: string; jobTitle: string; dates: string[] }[] | null
   >(null);
+  const [exclusivityPrompt, setExclusivityPrompt] = useState<string | null>(null);
 
-  function save(next: AssignmentStatus, confirmOverride = false) {
+  function save(next: AssignmentStatus, overrides: { conflicts?: boolean; exclusivity?: boolean } = {}) {
     const fd = new FormData();
     fd.set("assignmentId", assignment.id);
     fd.set("status", next);
     if (rate !== "") fd.set("rate", rate);
     if (callTime) fd.set("callTime", callTime);
     if (wrapTime) fd.set("wrapTime", wrapTime);
-    if (confirmOverride) fd.set("confirmConflicts", "1");
+    if (overrides.conflicts) fd.set("confirmConflicts", "1");
+    if (overrides.exclusivity) fd.set("confirmExclusivity", "1");
     setError(null);
     setConflicts(null);
+    setExclusivityPrompt(null);
     startTransition(async () => {
       const res = await updateAssignment(fd);
       if (!res.ok && "conflict" in res && res.conflict) {
         setConflicts(res.conflicts ?? []);
         return;
       }
+      if (!res.ok && "exclusivityConflict" in res && res.exclusivityConflict) {
+        setExclusivityPrompt(res.error);
+        return;
+      }
       if (!res.ok) setError(res.error);
       else setStatus(next);
+    });
+  }
+
+  function respondCounter(decision: "accept" | "reject") {
+    const fd = new FormData();
+    fd.set("assignmentId", assignment.id);
+    fd.set("decision", decision);
+    startTransition(async () => {
+      const res = await respondToCounterOffer(fd);
+      if (!res.ok) setError(res.error);
     });
   }
 
@@ -298,7 +319,7 @@ function AssignmentRow({
               </ul>
               <div className="mt-2 flex gap-2">
                 <button
-                  onClick={() => save(AssignmentStatus.CONFIRMED, true)}
+                  onClick={() => save(AssignmentStatus.CONFIRMED, { conflicts: true })}
                   className="ll-btn-secondary text-xs"
                 >
                   <Check size={12} /> Confirm anyway
@@ -312,6 +333,86 @@ function AssignmentRow({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {exclusivityPrompt && (
+        <div className="w-full mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle size={14} className="text-amber-500 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0 text-xs text-amber-200">
+              <p className="font-medium">{exclusivityPrompt}</p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => save(AssignmentStatus.CONFIRMED, { exclusivity: true })}
+                  className="ll-btn-secondary text-xs"
+                >
+                  <Check size={12} /> Override exclusivity
+                </button>
+                <button
+                  onClick={() => setExclusivityPrompt(null)}
+                  className="ll-btn-ghost text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {assignment.modelProposedRate != null && (
+        <div className="w-full mt-2 rounded-lg border border-accent/40 bg-accent-soft/20 p-3">
+          <div className="flex items-start gap-2">
+            <MessageSquare size={14} className="text-accent mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0 text-xs text-ink">
+              <p className="font-medium">
+                {assignment.model.displayName} counter-offered{" "}
+                <span className="text-accent">
+                  {jobCurrency} {assignment.modelProposedRate.toLocaleString()}
+                </span>
+              </p>
+              {assignment.modelRateNote && (
+                <p className="mt-1 text-ink-muted">&ldquo;{assignment.modelRateNote}&rdquo;</p>
+              )}
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => respondCounter("accept")}
+                  disabled={pending}
+                  className="ll-btn-primary text-xs"
+                >
+                  Accept rate
+                </button>
+                <button
+                  onClick={() => respondCounter("reject")}
+                  disabled={pending}
+                  className="ll-btn-secondary text-xs"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(assignment.callsheetReadAt || assignment.checkedInAt) && (
+        <div className="w-full mt-1 flex flex-wrap gap-3 text-[10px] text-ink-muted">
+          {assignment.callsheetReadAt && (
+            <span className="inline-flex items-center gap-1">
+              <FileCheck size={11} /> Callsheet read{" "}
+              {new Date(assignment.callsheetReadAt).toLocaleDateString()}
+            </span>
+          )}
+          {assignment.checkedInAt && (
+            <span className="inline-flex items-center gap-1 text-board-confirmed">
+              <MapPinned size={11} /> On set{" "}
+              {new Date(assignment.checkedInAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
         </div>
       )}
     </div>

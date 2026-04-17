@@ -9,6 +9,7 @@ import { AssignmentsSection } from "./assignments-section";
 import { ContactsSection } from "./contacts-section";
 import { JobRoomSection } from "./job-room-section";
 import { TravelSection } from "./travel-section";
+import { LookBoardSection } from "./look-board-section";
 
 export default async function JobDetail({
   params,
@@ -39,9 +40,29 @@ export default async function JobDetail({
           schedule: { orderBy: { date: "asc" } },
         },
       },
+      outfits: {
+        orderBy: { order: "asc" },
+        include: {
+          reactions: {
+            include: { option: false },
+          },
+        },
+      },
     },
   });
   if (!job || job.agencyId !== user.agencyId) notFound();
+
+  // Resolve model names for the outfit reactions.
+  const reactionModelIds = Array.from(
+    new Set(job.outfits.flatMap((o) => o.reactions.map((r) => r.modelId))),
+  );
+  const reactionModels = reactionModelIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: reactionModelIds } },
+        select: { id: true, displayName: true },
+      })
+    : [];
+  const nameById = new Map(reactionModels.map((m) => [m.id, m.displayName]));
 
   // Load roster for the attach-models dialog.
   const roster = await prisma.model.findMany({
@@ -106,6 +127,10 @@ export default async function JobDetail({
               notes: a.notes,
               callTime: a.callTime,
               wrapTime: a.wrapTime,
+              modelProposedRate: a.modelProposedRate,
+              modelRateNote: a.modelRateNote,
+              callsheetReadAt: a.callsheetReadAt?.toISOString() ?? null,
+              checkedInAt: a.checkedInAt?.toISOString() ?? null,
               model: {
                 userId: a.model.userId,
                 division: a.model.division,
@@ -174,6 +199,21 @@ export default async function JobDetail({
                 : []
             }
           />
+
+          <LookBoardSection
+            jobId={job.id}
+            outfits={job.outfits.map((o) => ({
+              id: o.id,
+              title: o.title,
+              imageUrl: o.imageUrl,
+              notes: o.notes,
+              reactions: o.reactions.map((r) => ({
+                modelName: nameById.get(r.modelId) ?? "Model",
+                reaction: r.reaction,
+                note: r.note,
+              })),
+            }))}
+          />
         </div>
 
         <div className="space-y-6">
@@ -190,6 +230,11 @@ export default async function JobDetail({
               defaultRate: job.defaultRate,
               rateType: job.rateType,
               currency: job.currency,
+              usageTerritory: job.usageTerritory,
+              usageDuration: job.usageDuration,
+              usageMedia: job.usageMedia,
+              usageExpiresAt: job.usageExpiresAt ? iso(job.usageExpiresAt) : null,
+              exclusivityCategory: job.exclusivityCategory,
             }}
           />
         </div>
