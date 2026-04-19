@@ -16,6 +16,7 @@ import {
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { PageHeader } from "@/components/page-header";
+import { AnimatedNumber } from "@/components/animated-number";
 import { OnboardingBanner } from "./onboarding-banner";
 import { initials, cn } from "@/lib/utils";
 
@@ -250,8 +251,11 @@ export default async function AgencyHome() {
           >
             <div className="flex items-end justify-between mb-3">
               <div>
-                <div className="font-serif text-3xl tracking-tight">
-                  {user.agency.currency} {revenue6mo.toFixed(0)}
+                <div className="font-serif text-3xl tracking-tight tabular-nums">
+                  <AnimatedNumber
+                    value={revenue6mo}
+                    prefix={`${user.agency.currency} `}
+                  />
                 </div>
                 <div className="text-[11px] text-ink-subtle mt-0.5">
                   Paid last 6 months · {completedJobs6mo} jobs done last 30d

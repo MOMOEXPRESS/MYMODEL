@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { AnimatedNumber } from "./animated-number";
 
 export type Breadcrumb = { href: string; label: string };
 
@@ -88,8 +89,8 @@ export function PageHeader({
                   <dt className="text-[10px] uppercase tracking-wider text-ink-subtle">
                     {s.label}
                   </dt>
-                  <dd className="font-serif text-2xl tracking-tight leading-none mt-1">
-                    {s.value}
+                  <dd className="font-serif text-2xl tracking-tight leading-none mt-1 tabular-nums">
+                    <StatValue value={s.value} />
                   </dd>
                 </div>
               ))}
@@ -106,8 +107,8 @@ export function PageHeader({
                 <dt className="text-[10px] uppercase tracking-wider text-ink-subtle">
                   {s.label}
                 </dt>
-                <dd className="font-serif text-xl tracking-tight leading-none mt-1">
-                  {s.value}
+                <dd className="font-serif text-xl tracking-tight leading-none mt-1 tabular-nums">
+                  <StatValue value={s.value} />
                 </dd>
               </div>
             ))}
@@ -118,4 +119,9 @@ export function PageHeader({
       </div>
     </header>
   );
+}
+
+function StatValue({ value }: { value: string | number }) {
+  if (typeof value === "number") return <AnimatedNumber value={value} />;
+  return <>{value}</>;
 }

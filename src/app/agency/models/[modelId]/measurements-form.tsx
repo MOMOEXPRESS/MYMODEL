@@ -2,6 +2,7 @@
 
 import { Division, ModelStatus } from "@prisma/client";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { saveMeasurements } from "./actions";
 
 type Model = {
@@ -26,21 +27,17 @@ type ModelFormProps = {
 
 export function MeasurementsForm({ modelId, model, selfView = false }: ModelFormProps) {
   const [pending, startTransition] = useTransition();
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     fd.set("modelId", modelId);
-    setError(null);
-    setSaved(false);
     startTransition(async () => {
       const res = await saveMeasurements(fd);
-      if (!res.ok) setError(res.error);
-      else {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+      if (!res.ok) {
+        toast.error(res.error);
+      } else {
+        toast.success("Card saved.");
       }
     });
   }
@@ -164,8 +161,6 @@ export function MeasurementsForm({ modelId, model, selfView = false }: ModelForm
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {saved && <p className="text-sm text-board-confirmed">Saved.</p>}
 
       <button type="submit" disabled={pending} className="ll-btn-primary w-full">
         {pending ? "Saving…" : "Save card"}

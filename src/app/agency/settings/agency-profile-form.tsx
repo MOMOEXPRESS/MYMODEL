@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
+import { toast } from "sonner";
 import { updateAgencyProfile } from "./actions";
 
 type Agency = {
@@ -29,22 +30,15 @@ export function AgencyProfileForm({
   readOnly: boolean;
 }) {
   const [pending, startTransition] = useTransition();
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (readOnly) return;
     const fd = new FormData(e.currentTarget);
-    setError(null);
-    setSaved(false);
     startTransition(async () => {
       const res = await updateAgencyProfile(fd);
-      if (!res.ok) setError(res.error);
-      else {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      }
+      if (!res.ok) toast.error(res.error);
+      else toast.success("Agency profile saved.");
     });
   }
 
@@ -153,8 +147,6 @@ export function AgencyProfileForm({
         Enable <code className="font-mono text-xs">/a/{agency.id.slice(0, 6)}…</code> public roster page
       </label>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {saved && <p className="text-sm text-board-confirmed">Saved.</p>}
 
       {!readOnly && (
         <button type="submit" disabled={pending} className="ll-btn-primary">

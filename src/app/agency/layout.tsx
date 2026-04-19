@@ -6,6 +6,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { PageTransition } from "@/components/page-transition";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { CommandPalette } from "@/components/command-palette";
+import { CommandKHint } from "@/components/command-k-hint";
 import { getLocale } from "@/lib/i18n";
 import { initials } from "@/lib/utils";
 
@@ -36,6 +37,7 @@ export default async function AgencyLayout({
           </div>
         </div>
 
+        <CommandKHint />
         <AgencyNav role={user.agencyMembership?.role ?? null} />
 
         <div className="mt-auto p-4 border-t border-paper-border">

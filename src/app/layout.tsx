@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Toaster } from "sonner";
 import { CookieBanner } from "@/components/cookie-banner";
 import { getLocale } from "@/lib/i18n";
 import "./globals.css";
@@ -36,6 +37,24 @@ export default async function RootLayout({
       >
         {children}
         <CookieBanner />
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          expand={false}
+          richColors={false}
+          toastOptions={{
+            classNames: {
+              toast:
+                "!bg-paper-elevated !border !border-paper-border !text-ink !rounded-xl !shadow-2xl !font-sans",
+              title: "!text-sm !font-medium",
+              description: "!text-xs !text-ink-muted",
+              actionButton: "!bg-ink !text-paper !text-xs !font-medium !rounded-md",
+              cancelButton: "!bg-paper-border/60 !text-ink-muted !text-xs !rounded-md",
+              success: "!border-board-confirmed/40",
+              error: "!border-red-500/40",
+            },
+          }}
+        />
       </body>
     </html>
   );
