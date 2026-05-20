@@ -119,8 +119,28 @@ function NotifItem({ n }: { n: Notif }) {
           title: `Call sheet posted: ${preview}`,
           href: jobId ? `/m/jobs/${jobId}` : "#",
         };
+      case "CLIENT_APPROVED_MODEL":
+        return {
+          title: `Client approved ${(p.modelName as string) ?? "model"} on ${(p.jobTitle as string) ?? "job"}`,
+          href: jobId ? `/agency/bookings/${jobId}` : "/agency/bookings",
+        };
+      case "CLIENT_FLAGGED_MODEL":
+        return {
+          title: `Client flagged ${(p.modelName as string) ?? "model"}: ${(p.note as string) ?? "see job"}`,
+          href: jobId ? `/agency/bookings/${jobId}` : "/agency/bookings",
+        };
+      case "CLIENT_BRIEF_SUBMITTED":
+        return {
+          title: `New brief: ${(p.title as string) ?? "Untitled"}`,
+          href: "/agency/workbench",
+        };
+      case "STALE_OPTION":
+        return {
+          title: `Stale hold: ${(p.modelName as string) ?? "model"} on ${(p.jobTitle as string) ?? "job"}`,
+          href: jobId ? `/agency/bookings/${jobId}` : "/agency/schedule",
+        };
       default:
-        return { title: n.type, href: "#" };
+        return { title: n.type.replace(/_/g, " ").toLowerCase(), href: "#" };
     }
   })();
 

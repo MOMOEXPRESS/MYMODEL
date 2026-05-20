@@ -2,11 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
 import { logEvent } from "@/lib/audit";
 
 export async function markPayoutPaid(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("payout.mark_paid");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const id = String(formData.get("payoutId") ?? "");
   const payout = await prisma.modelPayout.findUnique({ where: { id } });
   if (!payout || payout.agencyId !== user.agencyId) {

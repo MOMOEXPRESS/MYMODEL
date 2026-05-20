@@ -2,14 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { RoomFileType } from "@prisma/client";
+import { RoomFileType, UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import { uploadFile, UploadError } from "@/lib/blob";
+import { can } from "@/lib/permissions";
 
-async function assertAccess(jobId: string) {
+type RoomActor = NonNullable<Awaited<ReturnType<typeof getSessionUser>>>;
+
+async function assertRoomAccess(
+  jobId: string,
+  opts: { write?: boolean } = {},
+): Promise<{ actor: RoomActor; write: boolean }> {
   const actor = await getSessionUser();
   if (!actor) throw new Error("UNAUTHORIZED");
+
   const job = await prisma.job.findUnique({
     where: { id: jobId },
     select: {
@@ -19,16 +26,24 @@ async function assertAccess(jobId: string) {
   });
   if (!job) throw new Error("NOT_FOUND");
 
-  // Agency staff in the same tenant → full access.
-  if (actor.role === "AGENCY_STAFF" && actor.agencyId === job.agencyId) return actor;
+  if (actor.role === UserRole.AGENCY_STAFF && actor.agencyId === job.agencyId) {
+    const write = can(actor.agencyMembership?.role, "room.edit");
+    if (opts.write && !write) throw new Error("FORBIDDEN");
+    return { actor, write };
+  }
 
-  // Models who are CONFIRMED or OPTION on this job → read/write.
-  if (actor.role === "MODEL") {
+  if (actor.role === UserRole.MODEL) {
     const mine = job.assignments.find((a) => a.modelId === actor.id);
-    if (mine && ["OPTION_1", "OPTION_2", "OPTION_3", "CONFIRMED", "DONE"].includes(mine.status)) {
-      return actor;
+    if (
+      mine &&
+      ["OPTION_1", "OPTION_2", "OPTION_3", "CONFIRMED", "DONE"].includes(mine.status)
+    ) {
+      // Models: read files/schedule; chat only — no uploads or schedule edits.
+      if (opts.write) throw new Error("FORBIDDEN");
+      return { actor, write: false };
     }
   }
+
   throw new Error("FORBIDDEN");
 }
 
@@ -41,14 +56,18 @@ async function ensureRoom(jobId: string): Promise<string> {
   return room.id;
 }
 
-// ── Files ──────────────────────────────────────────────────────────
-
 export async function uploadRoomFile(formData: FormData) {
   const jobId = String(formData.get("jobId") ?? "");
   const typeRaw = String(formData.get("type") ?? "OTHER");
   const file = formData.get("file");
 
-  const actor = await assertAccess(jobId);
+  let actor: RoomActor;
+  try {
+    ({ actor } = await assertRoomAccess(jobId, { write: true }));
+  } catch {
+    return { ok: false as const, error: "Forbidden" };
+  }
+
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false as const, error: "No file" };
   }
@@ -83,7 +102,6 @@ export async function uploadRoomFile(formData: FormData) {
     },
   });
 
-  // Notify confirmed models if call sheet posted.
   if (type === "CALLSHEET") {
     const confirmed = await prisma.jobAssignment.findMany({
       where: { jobId, status: "CONFIRMED" },
@@ -112,14 +130,16 @@ export async function deleteRoomFile(formData: FormData) {
     include: { room: { select: { jobId: true } } },
   });
   if (!file) return { ok: false as const, error: "Not found" };
-  await assertAccess(file.room.jobId);
+  try {
+    await assertRoomAccess(file.room.jobId, { write: true });
+  } catch {
+    return { ok: false as const, error: "Forbidden" };
+  }
   await prisma.roomFile.delete({ where: { id: fileId } });
   revalidatePath(`/agency/jobs/${file.room.jobId}`);
   revalidatePath(`/m/jobs/${file.room.jobId}`);
   return { ok: true as const };
 }
-
-// ── Schedule ───────────────────────────────────────────────────────
 
 const scheduleSchema = z.object({
   jobId: z.string().cuid(),
@@ -137,7 +157,11 @@ export async function addScheduleItem(formData: FormData) {
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const d = parsed.data;
 
-  await assertAccess(d.jobId);
+  try {
+    await assertRoomAccess(d.jobId, { write: true });
+  } catch {
+    return { ok: false as const, error: "Forbidden" };
+  }
   const roomId = await ensureRoom(d.jobId);
 
   await prisma.roomScheduleItem.create({
@@ -163,17 +187,24 @@ export async function deleteScheduleItem(formData: FormData) {
     include: { room: { select: { jobId: true } } },
   });
   if (!item) return { ok: false as const, error: "Not found" };
-  await assertAccess(item.room.jobId);
+  try {
+    await assertRoomAccess(item.room.jobId, { write: true });
+  } catch {
+    return { ok: false as const, error: "Forbidden" };
+  }
   await prisma.roomScheduleItem.delete({ where: { id: itemId } });
   revalidatePath(`/agency/jobs/${item.room.jobId}`);
   revalidatePath(`/m/jobs/${item.room.jobId}`);
   return { ok: true as const };
 }
 
-// ── Chat messages ──────────────────────────────────────────────────
-
 export async function sendRoomMessage(input: { jobId: string; body: string }) {
-  const actor = await assertAccess(input.jobId);
+  let actor: RoomActor;
+  try {
+    ({ actor } = await assertRoomAccess(input.jobId));
+  } catch {
+    return { ok: false as const, error: "Forbidden" };
+  }
   const body = input.body.trim();
   if (!body || body.length > 4000) return { ok: false as const, error: "Invalid message" };
 
@@ -200,7 +231,11 @@ export async function sendRoomMessage(input: { jobId: string; body: string }) {
 }
 
 export async function listRoomMessages(jobId: string) {
-  await assertAccess(jobId);
+  try {
+    await assertRoomAccess(jobId);
+  } catch {
+    return { ok: false as const, error: "Forbidden", messages: [] };
+  }
   const room = await prisma.jobRoom.findUnique({ where: { jobId } });
   if (!room) return { ok: true as const, messages: [] };
   const msgs = await prisma.message.findMany({

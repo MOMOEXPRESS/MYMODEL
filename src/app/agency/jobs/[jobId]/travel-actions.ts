@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { TravelType } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
 
 const addSchema = z.object({
   jobId: z.string().cuid(),
@@ -20,7 +20,12 @@ const addSchema = z.object({
 });
 
 export async function addTravelItem(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("travel.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = addSchema.safeParse(raw);
@@ -51,7 +56,12 @@ export async function addTravelItem(formData: FormData) {
 }
 
 export async function deleteTravelItem(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("travel.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const id = String(formData.get("itemId") ?? "");
   const item = await prisma.travelItem.findUnique({
     where: { id },

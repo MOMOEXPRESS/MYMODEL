@@ -23,7 +23,7 @@ export default async function ClientsPage() {
       <PageHeader
         eyebrow="Clients"
         title="External clients"
-        subtitle="Share a magic-link portal so brands can see their jobs and approve the lineup."
+        subtitle="CRM records linked to platform logins — portal, bookings, and briefs in one place."
       />
       <div className="px-8 py-8">
         <ClientsClient
@@ -33,6 +33,8 @@ export default async function ClientsPage() {
             companyName: c.companyName,
             email: c.email,
             phone: c.phone,
+            subtype: c.subtype,
+            platformUserId: c.platformUserId,
             portalEnabled: c.portalEnabled,
             portalToken: c.portalToken,
             portalTokenIssuedAt: c.portalTokenIssuedAt?.toISOString() ?? null,

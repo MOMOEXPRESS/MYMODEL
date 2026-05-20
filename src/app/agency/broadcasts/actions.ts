@@ -9,7 +9,7 @@ import {
   JobType,
 } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
 import { getSessionUser } from "@/lib/auth";
 import { syncHoldsForJob } from "@/lib/holds";
 import { logEvent } from "@/lib/audit";
@@ -34,7 +34,12 @@ const createSchema = z
   .and(jobFieldsSchema);
 
 export async function createBroadcast(input: unknown) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("broadcast.send");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const parsed = createSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Invalid input" };
   const { body, jobId, modelIds, createsJob, jobTitle, jobType, jobStartDate, jobEndDate } =

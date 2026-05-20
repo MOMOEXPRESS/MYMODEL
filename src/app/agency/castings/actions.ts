@@ -8,7 +8,8 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
+import { requirePlanFeature, planError } from "@/lib/plan-guard";
 import { logEvent } from "@/lib/audit";
 
 function mintCode(): string {
@@ -26,7 +27,13 @@ const createSchema = z.object({
 });
 
 export async function createCastingEvent(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("prospect.edit");
+    requirePlanFeature(user.agency, "scouting");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = createSchema.safeParse(raw);
@@ -73,7 +80,13 @@ export async function createCastingEvent(formData: FormData) {
 }
 
 export async function deleteCastingEvent(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("prospect.edit");
+    requirePlanFeature(user.agency, "scouting");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const eventId = String(formData.get("eventId") ?? "");
   const event = await prisma.castingEvent.findUnique({ where: { id: eventId } });
   if (!event || event.agencyId !== user.agencyId) {

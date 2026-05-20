@@ -38,34 +38,34 @@ export function AgencySignupForm() {
   return (
     <form onSubmit={onSubmit} className="mt-8 space-y-4">
       <div>
-        <label className="ll-label" htmlFor="agencyName">Agency name</label>
-        <input id="agencyName" name="agencyName" required className="ll-input" placeholder="Mademoiselle Paris" />
+        <label className="mk-auth-label" htmlFor="agencyName">Agency name</label>
+        <input id="agencyName" name="agencyName" required className="mk-auth-input" placeholder="Mademoiselle Paris" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="ll-label" htmlFor="city">City</label>
-          <input id="city" name="city" required className="ll-input" placeholder="Paris" />
+          <label className="mk-auth-label" htmlFor="city">City</label>
+          <input id="city" name="city" required className="mk-auth-input" placeholder="Paris" />
         </div>
         <div>
-          <label className="ll-label" htmlFor="country">Country</label>
-          <input id="country" name="country" defaultValue="FR" maxLength={2} className="ll-input uppercase" />
+          <label className="mk-auth-label" htmlFor="country">Country</label>
+          <input id="country" name="country" defaultValue="FR" maxLength={2} className="mk-auth-input uppercase" />
         </div>
       </div>
       <div>
-        <label className="ll-label" htmlFor="ownerName">Your name</label>
-        <input id="ownerName" name="ownerName" required className="ll-input" autoComplete="name" />
+        <label className="mk-auth-label" htmlFor="ownerName">Your name</label>
+        <input id="ownerName" name="ownerName" required className="mk-auth-input" autoComplete="name" />
       </div>
       <div>
-        <label className="ll-label" htmlFor="email">Work email</label>
-        <input id="email" name="email" type="email" required className="ll-input" autoComplete="email" />
+        <label className="mk-auth-label" htmlFor="email">Work email</label>
+        <input id="email" name="email" type="email" required className="mk-auth-input" autoComplete="email" />
       </div>
       <div>
-        <label className="ll-label" htmlFor="password">Password</label>
-        <input id="password" name="password" type="password" required minLength={8} className="ll-input" autoComplete="new-password" />
-        <p className="mt-1 text-xs text-ink-subtle">At least 8 characters.</p>
+        <label className="mk-auth-label" htmlFor="password">Password</label>
+        <input id="password" name="password" type="password" required minLength={8} className="mk-auth-input" autoComplete="new-password" />
+        <p className="mt-1 text-xs text-[#9c958d]">At least 8 characters.</p>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={pending} className="ll-btn-primary w-full">
+      {error && <p className="text-sm mk-auth-error">{error}</p>}
+      <button type="submit" disabled={pending} className="mk-auth-btn">
         {pending ? "Creating…" : "Create agency"}
       </button>
     </form>

@@ -1,12 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { TrendingUp, Award, Clock, Briefcase } from "lucide-react";
 import { requireAgencyStaff } from "@/lib/auth-guards";
+import { can } from "@/lib/permissions";
+import { hasPlanFeature } from "@/lib/plan-guard";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { initials } from "@/lib/utils";
 
 export default async function AnalyticsPage() {
   const user = await requireAgencyStaff();
+  if (!can(user.agencyMembership?.role, "analytics.view") || !hasPlanFeature(user.agency, "analytics")) {
+    redirect("/agency");
+  }
 
   // Last 6 months by invoice.paidAt
   const since = new Date();

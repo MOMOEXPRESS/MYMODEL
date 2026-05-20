@@ -13,36 +13,68 @@ export function LoginForm() {
     setPending(true);
     setError(null);
     const form = new FormData(e.currentTarget);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        email: form.get("email"),
-        password: form.get("password"),
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setError(data.error ?? "Could not sign in");
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    const password = String(form.get("password") ?? "");
+
+    let res: Response;
+    try {
+      res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch {
+      setError("Could not reach the server. Restart the dev server (rm -rf .next && npm run dev).");
       setPending(false);
       return;
     }
-    router.push(data.next ?? "/agency");
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg =
+        data.error ??
+        (res.status === 500
+          ? "Server error during sign-in — try restarting the dev server."
+          : "Could not sign in");
+      setError(msg);
+      setPending(false);
+      return;
+    }
+    router.push(data.next ?? "/agency/workbench");
     router.refresh();
   }
 
   return (
     <form onSubmit={onSubmit} className="mt-8 space-y-4">
       <div>
-        <label className="ll-label" htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" required autoComplete="email" className="ll-input" />
+        <label className="mk-auth-label" htmlFor="email">
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          defaultValue={process.env.NODE_ENV === "development" ? "owner@mademoiselle.demo" : undefined}
+          className="mk-auth-input"
+        />
       </div>
       <div>
-        <label className="ll-label" htmlFor="password">Password</label>
-        <input id="password" name="password" type="password" required autoComplete="current-password" className="ll-input" />
+        <label className="mk-auth-label" htmlFor="password">
+          Password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          className="mk-auth-input"
+        />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={pending} className="ll-btn-primary w-full">
+      {error && <p className="mk-auth-error">{error}</p>}
+      <button type="submit" disabled={pending} className="mk-auth-btn">
         {pending ? "Signing in…" : "Sign in"}
       </button>
     </form>

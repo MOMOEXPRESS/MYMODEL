@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { setSessionCookie, verifyPassword } from "@/lib/auth";
 import { checkRateLimit, ipFromRequest } from "@/lib/rate-limit";
+import { homePathForUser } from "@/lib/routing";
 
 const schema = z.object({
   email: z.string().email(),
@@ -28,7 +29,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() },
+    include: { agencyMembership: true },
+  });
   if (!user || user.suspended) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
@@ -40,6 +44,6 @@ export async function POST(req: Request) {
 
   await setSessionCookie(user.id);
 
-  const next = user.role === "MODEL" ? "/m" : "/agency";
+  const next = homePathForUser(user.role, user.agencyMembership?.role ?? null);
   return NextResponse.json({ ok: true, next });
 }

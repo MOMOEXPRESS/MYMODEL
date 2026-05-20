@@ -8,8 +8,10 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
 import { logEvent } from "@/lib/audit";
+import { syncClientPlatformLink, tryLinkClientOnEnablePortal } from "@/lib/client-link";
+import type { ClientSubtype } from "@prisma/client";
 
 function mintToken(): string {
   return randomBytes(24).toString("base64url");
@@ -21,10 +23,30 @@ const upsertSchema = z.object({
   companyName: z.string().max(120).optional().nullable(),
   email: z.string().email(),
   phone: z.string().max(40).optional().nullable(),
+  subtype: z
+    .enum([
+      "BRAND",
+      "MEDIA_AGENCY",
+      "PRODUCTION",
+      "MAGAZINE",
+      "ECOMMERCE",
+      "CASTING_DIRECTOR",
+      "PHOTOGRAPHER",
+      "DESIGNER",
+      "PR_EVENTS",
+      "TV_FILM",
+      "OTHER",
+    ])
+    .optional(),
 });
 
 export async function upsertClient(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("client.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = upsertSchema.safeParse(raw);
@@ -45,19 +67,23 @@ export async function upsertClient(formData: FormData) {
         companyName: d.companyName ?? null,
         email: d.email,
         phone: d.phone ?? null,
+        subtype: (d.subtype as ClientSubtype) ?? undefined,
       },
     });
+    await syncClientPlatformLink(d.clientId, d.email);
   } else {
-    await prisma.client.create({
+    const created = await prisma.client.create({
       data: {
         agencyId: user.agencyId,
         name: d.name,
         companyName: d.companyName ?? null,
         email: d.email,
         phone: d.phone ?? null,
+        subtype: (d.subtype as ClientSubtype) ?? "BRAND",
         createdByUserId: user.id,
       },
     });
+    await syncClientPlatformLink(created.id, d.email);
   }
 
   revalidatePath("/agency/clients");
@@ -65,7 +91,12 @@ export async function upsertClient(formData: FormData) {
 }
 
 export async function enablePortal(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("client.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const clientId = String(formData.get("clientId") ?? "");
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client || client.agencyId !== user.agencyId) {
@@ -80,6 +111,7 @@ export async function enablePortal(formData: FormData) {
       portalTokenIssuedAt: new Date(),
     },
   });
+  await tryLinkClientOnEnablePortal(clientId);
   await logEvent({
     agencyId: user.agencyId,
     actorId: user.id,
@@ -90,11 +122,35 @@ export async function enablePortal(formData: FormData) {
     summary: `Enabled client portal for ${client.name}`,
   });
   revalidatePath("/agency/clients");
+  revalidatePath(`/agency/clients/${clientId}`);
   return { ok: true as const, token };
 }
 
+export async function linkClientPlatformUser(formData: FormData) {
+  let user;
+  try {
+    user = await requireAgencyStaffCan("client.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
+  const clientId = String(formData.get("clientId") ?? "");
+  const client = await prisma.client.findUnique({ where: { id: clientId } });
+  if (!client || client.agencyId !== user.agencyId) {
+    return { ok: false as const, error: "Not found" };
+  }
+  await syncClientPlatformLink(clientId, client.email);
+  revalidatePath("/agency/clients");
+  revalidatePath(`/agency/clients/${clientId}`);
+  return { ok: true as const };
+}
+
 export async function revokePortal(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("client.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const clientId = String(formData.get("clientId") ?? "");
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client || client.agencyId !== user.agencyId) {
@@ -118,7 +174,12 @@ export async function revokePortal(formData: FormData) {
 }
 
 export async function rotatePortalToken(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("client.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const clientId = String(formData.get("clientId") ?? "");
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client || client.agencyId !== user.agencyId) {
@@ -134,7 +195,12 @@ export async function rotatePortalToken(formData: FormData) {
 }
 
 export async function deleteClient(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("client.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const clientId = String(formData.get("clientId") ?? "");
   const client = await prisma.client.findUnique({ where: { id: clientId } });
   if (!client || client.agencyId !== user.agencyId) {
