@@ -4,6 +4,7 @@ import { AssignmentStatus, ClientReactionType, Division } from "@prisma/client";
 import { useState, useTransition } from "react";
 import { Check, Flag, ThumbsUp } from "lucide-react";
 import { clientReactToAssignment } from "./actions";
+import { assignmentHoldDetail, assignmentSimpleLabel } from "@/lib/status-language";
 import { cn, initials } from "@/lib/utils";
 
 type ClientAssignment = {
@@ -14,13 +15,6 @@ type ClientAssignment = {
   division: Division;
   clientReaction: ClientReactionType | null;
   clientReactionNote: string | null;
-};
-
-const STATUS_LABEL: Partial<Record<AssignmentStatus, string>> = {
-  OPTION_1: "1st option",
-  OPTION_2: "2nd option",
-  OPTION_3: "3rd option",
-  CONFIRMED: "Confirmed",
 };
 
 export function ClientApprovals({
@@ -84,7 +78,10 @@ function ModelCard({ token, a }: { token: string; a: ClientAssignment }) {
         <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent text-white">
           <div className="font-serif text-lg leading-none">{a.modelName}</div>
           <div className="mt-1 text-[10px] uppercase tracking-wider opacity-80">
-            {a.division.replace("_", " ")} · {STATUS_LABEL[a.status] ?? a.status.toLowerCase()}
+            {a.division.replace("_", " ")} ·{" "}
+            {assignmentHoldDetail(a.status)
+              ? `${assignmentSimpleLabel(a.status)} (${assignmentHoldDetail(a.status)})`
+              : assignmentSimpleLabel(a.status)}
           </div>
         </div>
       </div>
