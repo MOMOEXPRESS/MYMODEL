@@ -31,6 +31,8 @@ import {
   utcDate,
 } from "@/lib/board";
 import { cn, initials } from "@/lib/utils";
+import { StatusLegend } from "@/components/status/status-legend";
+import { boardCellLabel, cellToSimple, SIMPLE_STATUS_CLASS } from "@/lib/status-language";
 
 // ──────────────────────────────────────────────────────────────────────
 
@@ -61,17 +63,15 @@ const STATUS_CLASS: Record<CellStatus, string> = {
     "bg-[repeating-linear-gradient(135deg,#1F1F1F_0,#1F1F1F_4px,#0A0A0A_4px,#0A0A0A_8px)]",
 };
 
-// Human labels aligned with industry vernacular.  "1st Option" means first
-// dibs on the dates; 2nd is the backup; 3rd is a deeper backup.
-const STATUS_LABEL: Record<CellStatus, string> = {
-  AVAILABLE: "Free",
-  OPTION_3: "3rd Option",
-  OPTION_2: "2nd Option",
-  OPTION_1: "1st Option",
+const STATUS_LABEL_DETAIL: Record<CellStatus, string> = {
+  AVAILABLE: "Available",
+  OPTION_3: "On hold · 3rd",
+  OPTION_2: "On hold · 2nd",
+  OPTION_1: "On hold · 1st",
   CONFIRMED: "Booked",
   ON_JOB: "On set",
   TRAVELING: "Traveling",
-  UNAVAILABLE: "Off",
+  UNAVAILABLE: "Away",
 };
 
 const STATUS_HELP: Record<CellStatus, string> = {
@@ -110,6 +110,7 @@ export function BoardClient({
   const [division, setDivision] = useState(initialDivision);
   const [query, setQuery] = useState(initialQuery);
   const [isPendingRefetch, setPendingRefetch] = useState(false);
+  const [showHoldDetail, setShowHoldDetail] = useState(false);
 
   // Debounced search
   useEffect(() => {
@@ -190,11 +191,14 @@ export function BoardClient({
           writeUrl({ from: undefined });
         }}
         loading={isPendingRefetch}
+        showHoldDetail={showHoldDetail}
+        onToggleHoldDetail={() => setShowHoldDetail((v) => !v)}
       />
       <BoardGrid
-        key={`${fromIso}:${days}`}
+        key={`${fromIso}:${days}:${showHoldDetail}`}
         data={data}
         onOptimistic={setData}
+        showHoldDetail={showHoldDetail}
       />
     </div>
   );
@@ -213,6 +217,8 @@ function Toolbar({
   onShift,
   onToday,
   loading,
+  showHoldDetail,
+  onToggleHoldDetail,
 }: {
   days: number;
   onDays: (n: number) => void;
@@ -224,6 +230,8 @@ function Toolbar({
   onShift: (dir: -1 | 1) => void;
   onToday: () => void;
   loading: boolean;
+  showHoldDetail: boolean;
+  onToggleHoldDetail: () => void;
 }) {
   const rangeLabel = useMemo(() => {
     const from = utcDate(fromIso);
@@ -241,7 +249,7 @@ function Toolbar({
     <div className="px-8 pt-8 pb-4 border-b border-paper-border bg-paper-elevated sticky top-0 z-20">
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-3xl tracking-tight">Board</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Schedule</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {rangeLabel}{loading ? " · loading…" : ""}
           </p>
@@ -297,7 +305,33 @@ function Toolbar({
               className="ll-input pl-9 w-56"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={onToggleHoldDetail}
+            className={showHoldDetail ? "ll-btn-primary text-xs" : "ll-btn-secondary text-xs"}
+          >
+            {showHoldDetail ? "Hold detail on" : "Hold detail"}
+          </button>
         </div>
+      </div>
+      <div className="mt-4">
+        {showHoldDetail ? (
+          <div className="flex flex-wrap gap-3 text-xs text-ink-muted px-8">
+            <Legend status="AVAILABLE" />
+            <Legend status="OPTION_3" />
+            <Legend status="OPTION_2" />
+            <Legend status="OPTION_1" />
+            <Legend status="CONFIRMED" />
+            <Legend status="ON_JOB" />
+            <Legend status="TRAVELING" />
+            <Legend status="UNAVAILABLE" />
+          </div>
+        ) : (
+          <div className="px-8">
+            <StatusLegend showHelp />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -315,9 +349,11 @@ type SelectionRect = {
 function BoardGrid({
   data,
   onOptimistic,
+  showHoldDetail,
 }: {
   data: BoardPayload;
   onOptimistic: (next: BoardPayload) => void;
+  showHoldDetail: boolean;
 }) {
   const { dates, rows } = data;
 
@@ -455,6 +491,7 @@ function BoardGrid({
               dates={dates}
               dragStart={dragStart}
               selection={visibleRect}
+              showHoldDetail={showHoldDetail}
               onDragStart={(c) => {
                 setDragStart({ r: ri, c });
                 setDragEnd({ r: ri, c });
@@ -465,18 +502,6 @@ function BoardGrid({
             />
           ))}
         </div>
-      </div>
-
-      {/* Legend */}
-      <div className="px-8 py-3 flex items-center gap-4 text-xs text-ink-muted flex-wrap">
-        <Legend status="AVAILABLE" />
-        <Legend status="OPTION_3" />
-        <Legend status="OPTION_2" />
-        <Legend status="OPTION_1" />
-        <Legend status="CONFIRMED" />
-        <Legend status="ON_JOB" />
-        <Legend status="TRAVELING" />
-        <Legend status="UNAVAILABLE" />
       </div>
 
       {/* Selection action bar */}
@@ -511,6 +536,7 @@ function Row({
   dates,
   selection,
   dragStart,
+  showHoldDetail,
   onDragStart,
   onDragEnter,
 }: {
@@ -519,6 +545,7 @@ function Row({
   dates: string[];
   selection: SelectionRect | null;
   dragStart: { r: number; c: number } | null;
+  showHoldDetail: boolean;
   onDragStart: (c: number) => void;
   onDragEnter: (c: number) => void;
 }) {
@@ -573,15 +600,15 @@ function Row({
             }}
             title={
               holds && holds.length > 0
-                ? `${STATUS_LABEL[status]} · ${holds
+                ? `${boardCellLabel(status, showHoldDetail)} · ${holds
                     .map((h) => h.jobTitle + (h.callTime ? ` · call ${h.callTime}` : ""))
                     .join(", ")}`
-                : `${STATUS_LABEL[status]} · ${d}`
+                : `${boardCellLabel(status, showHoldDetail)} · ${d}`
             }
             className={cn(
               "relative h-12 border-b border-paper-border cursor-crosshair transition-colors",
               status === "AVAILABLE" ? "" : "rounded-sm m-0.5 overflow-hidden",
-              STATUS_CLASS[status],
+              showHoldDetail ? STATUS_CLASS[status] : SIMPLE_STATUS_CLASS[cellToSimple(status)],
               weekend && status === "AVAILABLE" && "bg-white/[0.02]",
               weekEnd && "border-r border-paper-border",
               today && "ring-1 ring-inset ring-accent/50",
@@ -647,7 +674,7 @@ function Legend({ status }: { status: CellStatus }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className={cn("w-3 h-3 rounded-sm border border-paper-border", STATUS_CLASS[status])} />
-      {STATUS_LABEL[status]}
+      {STATUS_LABEL_DETAIL[status]}
     </span>
   );
 }
