@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Playfair_Display } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
 import { Toaster } from "sonner";
 import { CookieBanner } from "@/components/cookie-banner";
 import { getLocale } from "@/lib/i18n";
@@ -24,7 +31,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`h-full ${GeistSans.variable} ${GeistMono.variable}`}
+      className={`h-full ${GeistSans.variable} ${GeistMono.variable} ${playfair.variable}`}
     >
       <body
         className="min-h-full bg-paper text-ink antialiased font-sans"
@@ -32,6 +39,7 @@ export default async function RootLayout({
           {
             "--font-sans": "var(--font-geist-sans)",
             "--font-mono": "var(--font-geist-mono)",
+            "--font-serif": "var(--font-serif)",
           } as React.CSSProperties
         }
       >

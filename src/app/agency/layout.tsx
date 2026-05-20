@@ -7,7 +7,6 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { CommandPalette } from "@/components/command-palette";
 import { CommandKHint } from "@/components/command-k-hint";
 import { AppLogo } from "@/components/app-logo";
-import { PlatformNav } from "@/components/platform-nav";
 import { getLocale } from "@/lib/i18n";
 import { initials } from "@/lib/utils";
 
@@ -30,8 +29,9 @@ export default async function AgencyLayout({
             : "Staff";
 
   return (
-    <div className="min-h-screen flex bg-paper">
-      <aside className="w-[260px] shrink-0 flex flex-col border-r border-paper-border bg-paper-elevated/95">
+    <div className="min-h-screen flex bg-paper relative">
+      <div aria-hidden className="ll-grain" />
+      <aside className="relative z-10 w-[260px] shrink-0 flex flex-col border-r border-paper-border bg-paper-elevated/95">
         <div className="h-14 px-4 flex items-center justify-between border-b border-paper-border">
           <AppLogo href="/agency" />
           <NotificationBell />
@@ -49,7 +49,7 @@ export default async function AgencyLayout({
 
         <div className="mt-auto p-3 border-t border-paper-border">
           <div className="flex items-center gap-3 rounded-xl bg-paper-muted border border-paper-border p-3">
-            <div className="w-9 h-9 rounded-full bg-accent-soft text-accent text-xs font-semibold flex items-center justify-center ring-1 ring-accent/20">
+            <div className="w-9 h-9 rounded-full bg-paper-muted text-editorial-warm text-xs font-semibold flex items-center justify-center ring-1 ring-paper-border">
               {initials(user.displayName)}
             </div>
             <div className="min-w-0 flex-1">
@@ -64,9 +64,8 @@ export default async function AgencyLayout({
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 flex flex-col relative">
-        <div aria-hidden className="pointer-events-none absolute inset-0 bg-glow-radial opacity-80" />
-        <PlatformNav />
+      <main className="relative z-10 flex-1 min-w-0 flex flex-col">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-glow-radial opacity-60" />
         <PageTransition>{children}</PageTransition>
       </main>
       <CommandPalette />

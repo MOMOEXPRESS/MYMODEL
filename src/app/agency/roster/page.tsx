@@ -84,9 +84,9 @@ export default async function RosterPage({
   return (
     <div>
       <PageHeader
-        eyebrow={`Agency · ${user.agency.name}`}
+        eyebrow={`${user.agency.name} · Talent`}
         title="Roster"
-        subtitle={`${totalCount} ${totalCount === 1 ? "model" : "models"} on your books.`}
+        subtitle={`${totalCount} ${totalCount === 1 ? "model" : "models"} on your books — editorial index, not a spreadsheet.`}
         actions={
           <div className="flex items-center gap-2">
             <ViewToggle current={view} />
@@ -118,50 +118,52 @@ export default async function RosterPage({
           // Every card is a large tile — equivalent to four of the old small
           // cards. Half as many columns per breakpoint, bigger photos, richer
           // captions (name + division + height overlaid on the hero).
-          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {models.map((m) => {
+          <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-10">
+            {models.map((m, i) => {
               const measurements = (m.measurements ?? {}) as Record<string, unknown>;
               const height =
                 typeof measurements.heightCm === "number"
                   ? `${measurements.heightCm} cm`
                   : null;
               const hero = m.portfolio[0];
+              const index = String(i + 1).padStart(2, "0");
               return (
-                <li key={m.userId} className="group animate-card-in">
-                  <Link
-                    href={`/agency/models/${m.userId}`}
-                    className="block rounded-2xl overflow-hidden border border-paper-border bg-paper-elevated hover:border-ink-subtle transition-all hover:-translate-y-1 hover:shadow-xl relative"
-                  >
-                    <div className="aspect-square bg-paper relative overflow-hidden">
+                <li key={m.userId} className="group">
+                  <Link href={`/agency/models/${m.userId}`} className="ll-project-card">
+                    <div className="aspect-[4/5] bg-paper relative overflow-hidden">
                       {hero ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={hero.url}
                           alt={modelDisplay(m)}
                           loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                          className="w-full h-full object-cover grayscale-[0.15] group-hover:grayscale-0 transition-all duration-700 ease-editorial"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-accent-soft/70 to-paper">
-                          <span className="font-serif text-7xl text-accent">
+                        <div className="w-full h-full flex items-center justify-center bg-paper-muted border-b border-paper-border">
+                          <span className="font-serif text-5xl text-editorial-warm/40">
                             {initials(modelDisplay(m))}
                           </span>
                         </div>
                       )}
-
-                      <div className="absolute inset-x-0 bottom-0 p-5 bg-gradient-to-t from-black/85 via-black/40 to-transparent text-white">
-                        <div className="font-serif text-2xl tracking-tight leading-none">
-                          {modelDisplay(m)}
-                        </div>
-                        <div className="mt-1.5 text-[11px] uppercase tracking-[0.15em] opacity-90">
-                          {m.division.replace("_", " ")}
-                          {height && ` · ${height}`}
-                        </div>
+                      <div className="absolute top-3 left-3">
+                        <span className="font-mono text-[10px] uppercase tracking-editorial text-ink/90 bg-paper/80 backdrop-blur-sm px-2 py-1 border border-paper-border">
+                          {index}
+                        </span>
                       </div>
-
                       <div className="absolute top-3 right-3">
                         <StatusDot status={m.status} />
                       </div>
+                    </div>
+                    <div className="px-4 py-4 border-t border-paper-border">
+                      <h2 className="font-serif text-xl tracking-tight text-ink leading-none">
+                        {modelDisplay(m)}
+                      </h2>
+                      <p className="mt-2 font-mono text-[10px] uppercase tracking-editorial text-ink-subtle">
+                        {m.division.replace("_", " ")}
+                        {height ? ` · ${height}` : ""}
+                        {m.baseCity ? ` · ${m.baseCity}` : ""}
+                      </p>
                     </div>
                   </Link>
                 </li>
@@ -199,7 +201,7 @@ export default async function RosterPage({
                           href={`/agency/models/${m.userId}`}
                           className="flex items-center gap-3 group"
                         >
-                          <div className="w-10 h-10 rounded-full overflow-hidden bg-accent-soft shrink-0">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-paper-muted ring-1 ring-paper-border shrink-0">
                             {hero ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
                               <img
@@ -209,7 +211,7 @@ export default async function RosterPage({
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-accent text-xs font-medium">
+                              <div className="w-full h-full flex items-center justify-center text-editorial-warm text-xs font-medium">
                                 {initials(modelDisplay(m))}
                               </div>
                             )}
@@ -268,8 +270,8 @@ function ViewToggle({ current }: { current: ViewMode }) {
         className={cn(
           "px-2.5 py-1.5 text-xs flex items-center gap-1.5",
           current === "grid"
-            ? "bg-ink text-paper"
-            : "bg-paper-elevated hover:bg-paper",
+            ? "bg-paper-hover text-ink border-editorial-warm/40"
+            : "bg-paper-elevated hover:bg-paper text-ink-muted",
         )}
       >
         <LayoutGrid size={13} /> Cards
@@ -280,8 +282,8 @@ function ViewToggle({ current }: { current: ViewMode }) {
         className={cn(
           "px-2.5 py-1.5 text-xs flex items-center gap-1.5 border-l border-paper-border",
           current === "list"
-            ? "bg-ink text-paper"
-            : "bg-paper-elevated hover:bg-paper",
+            ? "bg-paper-hover text-ink border-editorial-warm/40"
+            : "bg-paper-elevated hover:bg-paper text-ink-muted",
         )}
       >
         <List size={13} /> List

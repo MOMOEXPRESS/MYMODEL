@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { FileText } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { can } from "@/lib/permissions";
-import { DashboardHero, DashboardActionCard } from "@/components/dashboard/dashboard-hero";
+import {
+  DashboardHero,
+  DashboardActionCard,
+  DashboardSection,
+} from "@/components/dashboard/dashboard-hero";
 import { PLATFORM_NAV } from "@/lib/routing";
 import { acceptClientBrief } from "@/app/c/briefs/actions";
 
@@ -60,124 +63,157 @@ export default async function WorkbenchPage() {
     ]);
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl space-y-8">
-      <DashboardHero
-        eyebrow={user.agency.name}
-        title="Workbench"
-        subtitle="What needs your attention today — schedule, bookings, and client signals."
-      />
-
-      {expiringOptions > 0 && (
-        <div className="ll-card border-amber-500/30 bg-amber-500/5 p-4 flex items-center justify-between gap-4">
-          <p className="text-sm text-ink-muted">
-            <strong className="text-ink">{expiringOptions}</strong> hold
-            {expiringOptions === 1 ? "" : "s"} ending in the next 3 days.
-          </p>
-          <Link href="/agency/bookings" className="ll-btn-secondary text-xs shrink-0">
-            Review bookings
-          </Link>
-        </div>
-      )}
-
-      {staleOptions > 0 && (
-        <div className="ll-card border-orange-500/25 bg-orange-500/5 p-4 flex items-center justify-between gap-4">
-          <p className="text-sm text-ink-muted">
-            <strong className="text-ink">{staleOptions}</strong> first hold
-            {staleOptions === 1 ? "" : "s"} unchanged for 48h+ — chase or release.
-          </p>
-          <Link href="/agency/schedule" className="ll-btn-secondary text-xs shrink-0">
-            Open schedule
-          </Link>
-        </div>
-      )}
-
-      {clientFlags > 0 && (
-        <div className="ll-card border-rose-500/20 bg-rose-500/5 p-4 flex items-center justify-between gap-4">
-          <p className="text-sm text-ink-muted">
-            <strong className="text-ink">{clientFlags}</strong> client flag
-            {clientFlags === 1 ? "" : "s"} on lineups — check job assignments.
-          </p>
-          <Link href="/agency/bookings" className="ll-btn-secondary text-xs shrink-0">
-            Open bookings
-          </Link>
-        </div>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <DashboardActionCard
-          href="/agency/schedule"
-          title="Schedule"
-          body="Who's available, on hold, or booked this week."
-          cta="Open schedule"
-        />
-        <DashboardActionCard
-          href="/agency/bookings"
-          title="Bookings"
-          body={`${openJobs} open or in-progress booking${openJobs === 1 ? "" : "s"}.`}
-          cta="View pipeline"
-        />
-        <DashboardActionCard
-          href="/agency/broadcasts"
-          title="Casting replies"
-          body={
-            pendingResponses > 0
-              ? `${pendingResponses} model${pendingResponses === 1 ? "" : "s"} haven't answered.`
-              : "All recent blasts answered."
-          }
-          cta="Casting blasts"
-          accent={pendingResponses > 0 ? "amber" : undefined}
+    <div className="max-w-5xl">
+      <div className="px-6 lg:px-8">
+        <DashboardHero
+          eyebrow={user.agency.name}
+          eyebrowIndex="00"
+          title="Workbench"
+          subtitle="What needs your attention today — schedule, bookings, talent, and the wider network."
         />
       </div>
 
-      {clientBriefs.length > 0 && can(role, "job.create") && (
-        <section>
-          <h2 className="text-sm font-semibold flex items-center gap-2">
-            <FileText size={16} className="text-accent" />
-            Client briefs
-          </h2>
-          <ul className="mt-3 space-y-2">
-            {clientBriefs.map((b) => (
-              <li key={b.id} className="ll-card p-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium text-sm">{b.title}</p>
-                  <p className="text-xs text-ink-muted mt-0.5">From {b.author.displayName}</p>
-                </div>
-                <form
-                  action={async (formData) => {
-                    await acceptClientBrief(formData);
-                  }}
+      <div className="px-6 lg:px-8 pb-12 space-y-10">
+        {expiringOptions > 0 && (
+          <div className="ll-card border-editorial-warm/25 bg-editorial-warm/[0.04] p-4 flex items-center justify-between gap-4">
+            <p className="text-sm text-ink-muted">
+              <strong className="text-ink font-normal">{expiringOptions}</strong> hold
+              {expiringOptions === 1 ? "" : "s"} ending in the next 3 days.
+            </p>
+            <Link href="/agency/bookings" className="ll-btn-secondary text-xs shrink-0">
+              Review bookings
+            </Link>
+          </div>
+        )}
+
+        {staleOptions > 0 && (
+          <div className="ll-card border-editorial-warm/20 bg-paper-muted p-4 flex items-center justify-between gap-4">
+            <p className="text-sm text-ink-muted">
+              <strong className="text-ink font-normal">{staleOptions}</strong> first hold
+              {staleOptions === 1 ? "" : "s"} unchanged for 48h+ — chase or release.
+            </p>
+            <Link href="/agency/schedule" className="ll-btn-secondary text-xs shrink-0">
+              Open schedule
+            </Link>
+          </div>
+        )}
+
+        {clientFlags > 0 && (
+          <div className="ll-card border-editorial-rose/30 bg-editorial-rose/[0.06] p-4 flex items-center justify-between gap-4">
+            <p className="text-sm text-ink-muted">
+              <strong className="text-ink font-normal">{clientFlags}</strong> client flag
+              {clientFlags === 1 ? "" : "s"} on lineups.
+            </p>
+            <Link href="/agency/bookings" className="ll-btn-secondary text-xs shrink-0">
+              Open bookings
+            </Link>
+          </div>
+        )}
+
+        <DashboardSection index="01" title="Operations">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <DashboardActionCard
+              index="01"
+              href="/agency/schedule"
+              title="Schedule"
+              body="Who's available, on hold, or booked this week."
+              cta="Open schedule"
+            />
+            <DashboardActionCard
+              index="02"
+              href="/agency/bookings"
+              title="Bookings"
+              body={`${openJobs} open or in-progress booking${openJobs === 1 ? "" : "s"}.`}
+              cta="View pipeline"
+            />
+            <DashboardActionCard
+              index="03"
+              href="/agency/talent"
+              title="Talent"
+              body="Roster, portfolios, and model profiles."
+              cta="Open roster"
+            />
+            <DashboardActionCard
+              index="04"
+              href={PLATFORM_NAV.network}
+              title="Network"
+              body="Agencies, creatives, and connections across LuxLane."
+              cta="Browse network"
+            />
+            <DashboardActionCard
+              index="05"
+              href={PLATFORM_NAV.events}
+              title="Events"
+              body="Open castings, parties, and industry gatherings."
+              cta="See events"
+            />
+            <DashboardActionCard
+              index="06"
+              href="/agency/broadcasts"
+              title="Casting replies"
+              body={
+                pendingResponses > 0
+                  ? `${pendingResponses} model${pendingResponses === 1 ? "" : "s"} haven't answered.`
+                  : "All recent blasts answered."
+              }
+              cta="Casting blasts"
+            />
+          </div>
+        </DashboardSection>
+
+        {clientBriefs.length > 0 && can(role, "job.create") && (
+          <DashboardSection index="02" title="Client briefs">
+            <ul className="space-y-2">
+              {clientBriefs.map((b) => (
+                <li
+                  key={b.id}
+                  className="ll-card p-4 flex flex-wrap items-center justify-between gap-3 border-paper-border"
                 >
-                  <input type="hidden" name="briefId" value={b.id} />
-                  <button type="submit" className="ll-btn-primary text-xs">
-                    Create booking
-                  </button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+                  <div>
+                    <p className="font-medium text-sm">{b.title}</p>
+                    <p className="text-xs text-ink-muted mt-0.5 font-light">
+                      From {b.author.displayName}
+                    </p>
+                  </div>
+                  <form
+                    action={async (formData) => {
+                      await acceptClientBrief(formData);
+                    }}
+                  >
+                    <input type="hidden" name="briefId" value={b.id} />
+                    <button type="submit" className="ll-btn-primary text-xs">
+                      Create booking
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          </DashboardSection>
+        )}
 
-      <div className="flex flex-wrap gap-2 text-xs">
-        <Link href={PLATFORM_NAV.network} className="ll-btn-secondary">
-          Network
-        </Link>
-        <Link href={PLATFORM_NAV.events} className="ll-btn-secondary">
-          Events
-        </Link>
-        <Link href="/rules" className="ll-btn-ghost">
-          Rules & help
-        </Link>
+        <DashboardSection index="03" title="Quick links">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/agency/clients" className="ll-btn-secondary text-xs">
+              Clients
+            </Link>
+            <Link href="/agency/prospects" className="ll-btn-secondary text-xs">
+              New faces
+            </Link>
+            <Link href="/rules" className="ll-btn-ghost text-xs">
+              Rules & help
+            </Link>
+          </div>
+        </DashboardSection>
+
+        {recentMessages > 0 && (
+          <p className="font-mono text-[10px] uppercase tracking-editorial text-ink-subtle">
+            {recentMessages} unread message{recentMessages === 1 ? "" : "s"} —{" "}
+            <Link href="/agency/messages" className="text-editorial-warm hover:text-ink transition-colors">
+              inbox
+            </Link>
+          </p>
+        )}
       </div>
-
-      {recentMessages > 0 && (
-        <p className="text-xs text-ink-subtle">
-          {recentMessages} unread message{recentMessages === 1 ? "" : "s"} —{" "}
-          <Link href="/agency/messages" className="text-accent hover:underline">
-            inbox
-          </Link>
-        </p>
-      )}
     </div>
   );
 }

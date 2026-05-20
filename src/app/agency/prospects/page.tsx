@@ -14,9 +14,9 @@ export default async function ProspectsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Scouting"
+        eyebrow="New faces"
         title="Prospects"
-        subtitle="Track new-talent prospects from spotted to signed. Use the scouting link at open castings."
+        subtitle="Editorial scouting board — from spotted to signed. Share your scouting link at open castings."
         actions={
           <ScoutingLink
             signupCode={user.agency.signupCode}

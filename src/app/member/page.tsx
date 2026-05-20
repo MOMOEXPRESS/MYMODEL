@@ -14,18 +14,21 @@ export default async function MemberHomePage() {
       />
       <div className="grid sm:grid-cols-2 gap-4">
         <DashboardActionCard
+          index="01"
           href={PLATFORM_NAV.network}
           title="Network"
           body="Browse and connect with the LuxLane community."
           cta="Open network"
         />
         <DashboardActionCard
+          index="02"
           href={PLATFORM_NAV.events}
           title="Events"
           body="Group shoots, castings, and collaborations."
           cta="Browse events"
         />
         <DashboardActionCard
+          index="03"
           href="/member/settings"
           title="Profile"
           body="City and bio for your public presence."

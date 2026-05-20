@@ -30,6 +30,7 @@ export default async function ClientHomePage() {
 
       <div className="grid sm:grid-cols-2 gap-4">
         <DashboardActionCard
+          index="01"
           href="/c/jobs"
           title="Bookings"
           body={
@@ -40,6 +41,7 @@ export default async function ClientHomePage() {
           cta="View bookings"
         />
         <DashboardActionCard
+          index="02"
           href="/c/briefs"
           title="Briefs"
           body={
@@ -50,12 +52,14 @@ export default async function ClientHomePage() {
           cta="Send a brief"
         />
         <DashboardActionCard
+          index="03"
           href="/c/agencies"
           title="Agencies"
           body={`${agencyCount} linked agenc${agencyCount === 1 ? "y" : "ies"}.`}
           cta="My agencies"
         />
         <DashboardActionCard
+          index="04"
           href={PLATFORM_NAV.network}
           title="Network"
           body="Photographers, models, MUAs, and other brands."

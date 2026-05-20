@@ -21,18 +21,21 @@ export default async function CreativeHomePage() {
       />
       <div className="grid sm:grid-cols-2 gap-4">
         <DashboardActionCard
+          index="01"
           href={PLATFORM_NAV.network}
           title="Network"
           body="Models, brands, photographers, and agencies."
           cta="Connections"
         />
         <DashboardActionCard
+          index="02"
           href={PLATFORM_NAV.events}
           title="Group events"
           body="Host or join collaborative shoots and castings."
           cta="Events"
         />
         <DashboardActionCard
+          index="03"
           href="/creative/settings"
           title="Profile"
           body="Discipline, bio, and portfolio link."

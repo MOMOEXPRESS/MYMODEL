@@ -18,10 +18,10 @@ const config: Config = {
           muted: "#181816",
         },
         accent: {
-          DEFAULT: "#3B82F6",
-          hover: "#60A5FA",
-          soft: "rgba(59, 130, 246, 0.1)",
-          ring: "rgba(59, 130, 246, 0.32)",
+          DEFAULT: "#D4C4A8",
+          hover: "#E8DCC4",
+          soft: "rgba(212, 196, 168, 0.12)",
+          ring: "rgba(212, 196, 168, 0.35)",
         },
         editorial: {
           cream: "#F4F1EC",

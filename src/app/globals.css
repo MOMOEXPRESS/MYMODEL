@@ -77,7 +77,10 @@
   }
 
   .ll-eyebrow {
-    @apply text-[10px] font-medium uppercase tracking-editorial text-ink-subtle;
+    @apply font-mono text-[10px] font-normal uppercase tracking-editorial text-ink-subtle;
+  }
+  .ll-index-label {
+    @apply font-mono text-[10px] uppercase tracking-editorial text-ink-subtle;
   }
 
   .ll-display {
@@ -86,21 +89,20 @@
   }
 
   .ll-card {
-    @apply bg-paper-elevated border border-paper-border rounded-2xl;
-    box-shadow: theme("boxShadow.card");
+    @apply bg-paper-elevated border border-paper-border rounded-xl;
+    box-shadow: none;
   }
   .ll-card-interactive {
     @apply ll-card transition-all duration-[420ms] ease-editorial;
   }
   .ll-card-interactive:hover {
-    @apply border-paper-border/90 bg-paper-hover;
-    box-shadow: theme("boxShadow.card-hover");
+    @apply border-editorial-warm/25 bg-paper-hover;
     transform: translateY(-1px);
   }
   .ll-input {
     @apply w-full rounded-xl border border-paper-border bg-paper-muted px-3.5 py-2.5 text-sm text-ink
            placeholder:text-ink-subtle
-           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent/40;
+           focus:outline-none focus:ring-2 focus:ring-accent/15 focus:border-editorial-warm/35;
   }
   .ll-label {
     @apply block text-xs font-medium text-ink-muted mb-1.5 tracking-wide;
@@ -122,14 +124,21 @@
     @apply inline-flex items-center gap-1 rounded-full border border-paper-border bg-paper-muted px-2.5 py-0.5 text-[11px] font-medium text-ink-muted tracking-wide;
   }
   .ll-nav-section {
-    @apply px-3 pt-5 pb-1 text-[10px] font-medium uppercase tracking-editorial text-ink-subtle;
+    @apply px-3 pt-6 pb-2 font-mono text-[10px] uppercase tracking-editorial text-ink-subtle;
   }
   .ll-nav-link {
-    @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted
-           hover:text-ink hover:bg-paper-hover transition-colors duration-200;
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-muted border-l-2 border-transparent
+           hover:text-ink hover:bg-paper-hover/80 transition-colors duration-200;
   }
   .ll-nav-link-active {
-    @apply bg-ink text-paper shadow-sm hover:bg-ink hover:text-paper;
+    @apply text-ink border-editorial-warm bg-paper-hover/60 hover:text-ink hover:bg-paper-hover/80;
+  }
+  .ll-project-card {
+    @apply block border border-paper-border bg-paper-elevated overflow-hidden transition-colors duration-300 ease-editorial
+           hover:border-editorial-warm/30;
+  }
+  .ll-kanban-col {
+    @apply min-h-[280px] border border-paper-border bg-paper/80 flex flex-col;
   }
   .ll-stat {
     @apply ll-card p-5 flex flex-col gap-1.5;
@@ -176,7 +185,7 @@
   .bg-glow-accent {
     background-image: radial-gradient(
       ellipse 60% 40% at 80% 0%,
-      rgba(59, 130, 246, 0.08),
+      rgba(212, 196, 168, 0.06),
       transparent 70%
     );
   }
