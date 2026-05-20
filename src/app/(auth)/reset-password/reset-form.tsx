@@ -31,19 +31,19 @@ export function ResetForm({ token }: { token: string }) {
   return (
     <form onSubmit={onSubmit} className="mt-8 space-y-4">
       <div>
-        <label className="ll-label">New password</label>
+        <label className="mk-auth-label">New password</label>
         <input
           name="password"
           type="password"
           required
           minLength={8}
           autoComplete="new-password"
-          className="ll-input"
+          className="mk-auth-input"
         />
-        <p className="mt-1 text-xs text-ink-subtle">At least 8 characters.</p>
+        <p className="mt-1 text-xs text-[#9c958d]">At least 8 characters.</p>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={pending} className="ll-btn-primary w-full">
+      {error && <p className="text-sm mk-auth-error">{error}</p>}
+      <button type="submit" disabled={pending} className="mk-auth-btn">
         {pending ? "Saving…" : "Set new password"}
       </button>
     </form>

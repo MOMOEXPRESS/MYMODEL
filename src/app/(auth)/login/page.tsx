@@ -4,23 +4,42 @@ import { LoginForm } from "./login-form";
 export default function LoginPage() {
   return (
     <div>
-      <Link href="/" className="text-sm text-ink-muted">&larr; Back</Link>
-      <h1 className="mt-6 font-serif text-3xl tracking-tight">Log in</h1>
-      <p className="mt-2 text-sm text-ink-muted">
-        Welcome back. Bookers, production and models all use the same sign-in.
+      <h1 className="mk-display text-2xl text-[#f5f0eb]">Sign in</h1>
+      <p className="mt-2 text-sm text-[#9c958d] leading-relaxed">
+        Agency teams, models, clients, and creatives — you&apos;ll land in the right workspace.
       </p>
       <LoginForm />
-      <p className="mt-6 text-sm text-ink-muted">
-        <Link className="text-ink underline underline-offset-4" href="/forgot-password">
-          Forgot your password?
+      <p className="mt-6 text-sm">
+        <Link className="text-[#e8a4b8] hover:text-[#f5f0eb] font-medium" href="/forgot-password">
+          Forgot password?
         </Link>
       </p>
-      <p className="mt-6 text-sm text-ink-muted">
-        New agency? <Link className="text-ink underline underline-offset-4" href="/signup/agency">Create an account</Link>
-      </p>
-      <p className="mt-2 text-sm text-ink-muted">
-        Signed model? <Link className="text-ink underline underline-offset-4" href="/signup/model">Join with your agency code</Link>
-      </p>
+      <div className="mt-8 pt-6 border-t border-white/10 space-y-2 text-sm text-[#9c958d]">
+        <p>
+          Agency?{" "}
+          <Link className="text-[#f5f0eb] font-medium hover:underline" href="/signup/agency">
+            Create workspace
+          </Link>
+        </p>
+        <p>
+          Model?{" "}
+          <Link className="text-[#f5f0eb] font-medium hover:underline" href="/signup/model">
+            Join with code
+          </Link>
+        </p>
+        <p>
+          Client?{" "}
+          <Link className="text-[#f5f0eb] font-medium hover:underline" href="/signup/client">
+            Client account
+          </Link>
+        </p>
+        <p>
+          Creative?{" "}
+          <Link className="text-[#f5f0eb] font-medium hover:underline" href="/signup/creative">
+            Creative account
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

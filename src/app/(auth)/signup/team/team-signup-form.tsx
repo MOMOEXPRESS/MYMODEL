@@ -47,19 +47,19 @@ export function TeamSignupForm({
   return (
     <form onSubmit={onSubmit} className="mt-8 space-y-4">
       <div>
-        <label className="ll-label">Email</label>
-        <input value={prefillEmail} disabled className="ll-input" />
+        <label className="mk-auth-label">Email</label>
+        <input value={prefillEmail} disabled className="mk-auth-input" />
       </div>
       <div>
-        <label className="ll-label">Your name</label>
-        <input name="displayName" required className="ll-input" autoComplete="name" />
+        <label className="mk-auth-label">Your name</label>
+        <input name="displayName" required className="mk-auth-input" autoComplete="name" />
       </div>
       <div>
-        <label className="ll-label">Password</label>
-        <input name="password" type="password" required minLength={8} className="ll-input" autoComplete="new-password" />
+        <label className="mk-auth-label">Password</label>
+        <input name="password" type="password" required minLength={8} className="mk-auth-input" autoComplete="new-password" />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={pending} className="ll-btn-primary w-full">
+      {error && <p className="text-sm mk-auth-error">{error}</p>}
+      <button type="submit" disabled={pending} className="mk-auth-btn">
         {pending ? "Creating…" : "Accept & join"}
       </button>
     </form>

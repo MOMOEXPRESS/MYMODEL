@@ -5,10 +5,9 @@
 @layer base {
   :root {
     color-scheme: dark;
-    /* Spring curves (used by motion + CSS). Named after Emil Kowalski's cubic
-       approximations for iOS spring behaviour — feels alive but not gummy. */
     --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
   }
   html,
   body {
@@ -23,22 +22,19 @@
     -moz-osx-font-smoothing: grayscale;
   }
   ::selection {
-    background: theme("colors.ink.DEFAULT");
+    background: theme("colors.editorial.warm");
     color: theme("colors.paper.DEFAULT");
   }
   a,
   button {
     transition-property: background-color, color, border-color, box-shadow, opacity, transform;
-    transition-duration: 160ms;
-    transition-timing-function: var(--ease-spring);
+    transition-duration: 220ms;
+    transition-timing-function: var(--ease-editorial);
   }
-  /* Focus-visible ring — only when the user is keyboard-navigating. */
   :focus-visible {
-    outline: 2px solid theme("colors.accent.DEFAULT");
+    outline: 2px solid theme("colors.accent.ring");
     outline-offset: 2px;
-    border-radius: 4px;
   }
-  /* Form elements inherit dark scheme */
   input,
   textarea,
   select {
@@ -50,68 +46,103 @@
   select:focus-visible {
     outline: none;
   }
-  /* Light-up the native date / time picker arrow on dark */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="datetime-local"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
     filter: invert(0.85);
     opacity: 0.6;
   }
-
-  /* Refined scrollbars — thin and theme-aware. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
   }
   *::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  *::-webkit-scrollbar-track {
-    background: transparent;
+    width: 6px;
+    height: 6px;
   }
   *::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 999px;
   }
-  *::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.16);
-  }
 }
 
 @layer components {
-  .ll-card {
-    @apply bg-paper-elevated border border-paper-border rounded-xl;
-  }
-  .ll-input {
-    @apply w-full rounded-lg border border-paper-border bg-paper-elevated px-3 py-2 text-sm text-ink
-           placeholder:text-ink-subtle
-           focus:outline-none focus:ring-[3px] focus:ring-accent/15 focus:border-accent/50
-           transition-[border-color,box-shadow] duration-150;
-  }
-  .ll-label {
-    @apply block text-xs uppercase tracking-wider text-ink-subtle mb-1.5 font-medium;
-  }
-  .ll-btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-           disabled:opacity-50 disabled:cursor-not-allowed
-           active:scale-[0.98];
-  }
-  /* Primary = white on black (Vercel-style). */
-  .ll-btn-primary {
-    @apply ll-btn bg-ink text-paper hover:bg-white;
-  }
-  .ll-btn-secondary {
-    @apply ll-btn border border-paper-border bg-paper-elevated text-ink hover:bg-white/5;
-  }
-  .ll-btn-ghost {
-    @apply ll-btn text-ink-muted hover:text-ink hover:bg-white/5;
+  .ll-grain {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    opacity: 0.045;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* Keyboard chip — used in the cmd-K palette + empty states. */
+  .ll-eyebrow {
+    @apply text-[10px] font-medium uppercase tracking-editorial text-ink-subtle;
+  }
+
+  .ll-display {
+    @apply font-serif tracking-tight text-ink;
+    letter-spacing: -0.03em;
+  }
+
+  .ll-card {
+    @apply bg-paper-elevated border border-paper-border rounded-2xl;
+    box-shadow: theme("boxShadow.card");
+  }
+  .ll-card-interactive {
+    @apply ll-card transition-all duration-[420ms] ease-editorial;
+  }
+  .ll-card-interactive:hover {
+    @apply border-paper-border/90 bg-paper-hover;
+    box-shadow: theme("boxShadow.card-hover");
+    transform: translateY(-1px);
+  }
+  .ll-input {
+    @apply w-full rounded-xl border border-paper-border bg-paper-muted px-3.5 py-2.5 text-sm text-ink
+           placeholder:text-ink-subtle
+           focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent/40;
+  }
+  .ll-label {
+    @apply block text-xs font-medium text-ink-muted mb-1.5 tracking-wide;
+  }
+  .ll-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
+           disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
+  }
+  .ll-btn-primary {
+    @apply ll-btn bg-ink text-paper hover:bg-editorial-cream shadow-sm;
+  }
+  .ll-btn-secondary {
+    @apply ll-btn border border-paper-border bg-paper-elevated text-ink hover:bg-paper-hover;
+  }
+  .ll-btn-ghost {
+    @apply ll-btn text-ink-muted hover:text-ink hover:bg-white/[0.04];
+  }
+  .ll-badge {
+    @apply inline-flex items-center gap-1 rounded-full border border-paper-border bg-paper-muted px-2.5 py-0.5 text-[11px] font-medium text-ink-muted tracking-wide;
+  }
+  .ll-nav-section {
+    @apply px-3 pt-5 pb-1 text-[10px] font-medium uppercase tracking-editorial text-ink-subtle;
+  }
+  .ll-nav-link {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink-muted
+           hover:text-ink hover:bg-paper-hover transition-colors duration-200;
+  }
+  .ll-nav-link-active {
+    @apply bg-ink text-paper shadow-sm hover:bg-ink hover:text-paper;
+  }
+  .ll-stat {
+    @apply ll-card p-5 flex flex-col gap-1.5;
+  }
+  .ll-stat-label {
+    @apply text-[11px] font-medium uppercase tracking-caps text-ink-subtle;
+  }
+  .ll-stat-value {
+    @apply font-serif text-2xl tracking-tight tabular-nums text-ink;
+  }
   .kbd {
-    @apply inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md
-           border border-paper-border bg-paper text-[10px] font-mono text-ink-muted;
+    @apply inline-flex h-5 min-w-5 items-center justify-center rounded-md border border-paper-border
+           bg-paper-muted px-1.5 text-[10px] font-mono text-ink-subtle;
   }
 }
 
@@ -119,7 +150,7 @@
   @keyframes page-in {
     from {
       opacity: 0;
-      transform: translateY(6px);
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
@@ -127,68 +158,26 @@
     }
   }
   .animate-page-in {
-    animation: page-in 260ms var(--ease-spring) both;
+    animation: page-in 360ms var(--ease-spring) both;
   }
-
-  @keyframes card-in {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  .animate-card-in {
-    animation: card-in 300ms var(--ease-spring) both;
-  }
-
-  @keyframes spin-slow {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  .animate-spin-slow {
-    animation: spin-slow 900ms linear infinite;
-  }
-
-  /* Shimmer for skeleton loaders. */
-  @keyframes shimmer {
-    from { background-position: -200% 0; }
-    to { background-position: 200% 0; }
-  }
-  .animate-shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.02) 0%,
-      rgba(255, 255, 255, 0.06) 50%,
-      rgba(255, 255, 255, 0.02) 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.6s ease-in-out infinite;
-  }
-
-  /* Subtle decorative grid texture used behind hero bands */
   .bg-grid {
     background-image:
       linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background-size: 64px 64px;
   }
-
-  /* Tiny grain — Emil-style film noise over hero areas. */
-  .bg-grain {
-    background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
-  /* Soft radial vignette used behind hero numbers / empty states. */
-  .bg-vignette {
+  .bg-glow-radial {
     background-image: radial-gradient(
-      ellipse at top,
-      rgba(212, 168, 122, 0.06),
-      transparent 60%
+      ellipse 70% 45% at 50% -15%,
+      rgba(212, 196, 168, 0.06),
+      transparent 65%
+    );
+  }
+  .bg-glow-accent {
+    background-image: radial-gradient(
+      ellipse 60% 40% at 80% 0%,
+      rgba(59, 130, 246, 0.08),
+      transparent 70%
     );
   }
 }
@@ -198,7 +187,6 @@
   *::before,
   *::after {
     animation-duration: 0ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0ms !important;
   }
 }
