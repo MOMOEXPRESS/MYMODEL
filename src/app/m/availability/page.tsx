@@ -28,10 +28,10 @@ export default async function ModelAvailabilityPage() {
     <div>
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-3xl tracking-tight">Availability</h1>
+          <h1 className="font-serif text-3xl tracking-tight">Schedule</h1>
           <p className="mt-2 text-sm text-ink-muted max-w-xl">
-            Click a day to cycle it. Your agency sees this instantly and won&apos;t
-            pitch you on days you&apos;re off.
+            Mark days available or away. Your agency sees updates instantly — confirmed
+            jobs stay locked on the calendar.
           </p>
         </div>
         <Link href="/m/card" className="ll-btn-ghost text-xs">

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: luxlane-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: luxlane
+      POSTGRES_PASSWORD: luxlane
+      POSTGRES_DB: luxlane
+    volumes:
+      - luxlane_pg_data:/var/lib/postgresql/data
+
+volumes:
+  luxlane_pg_data:

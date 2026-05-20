@@ -4,6 +4,9 @@ import { requireModel } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import { EmptyState } from "@/components/empty-state";
 import { BroadcastCard } from "./broadcast-card";
+import { DashboardHero } from "@/components/dashboard/dashboard-hero";
+import { assignmentHoldDetail, assignmentSimpleLabel } from "@/lib/status-language";
+import { cn } from "@/lib/utils";
 
 export default async function ModelHome() {
   const user = await requireModel();
@@ -43,11 +46,17 @@ export default async function ModelHome() {
   ]);
 
   return (
-    <div>
-      <h1 className="font-serif text-3xl tracking-tight">
-        Hi, {user.displayName.split(" ")[0]}.
-      </h1>
-      <p className="mt-2 text-sm text-ink-muted">Here&apos;s what&apos;s coming up.</p>
+    <div className="space-y-8">
+      <DashboardHero
+        eyebrow="Model"
+        title={`Hi, ${user.displayName.split(" ")[0]}`}
+        subtitle="Casting replies and your next bookings."
+      />
+      <p className="text-sm text-ink-muted -mt-4">
+        <Link href="/m/bookings" className="text-accent hover:underline">
+          View all bookings →
+        </Link>
+      </p>
 
       {pendingBroadcasts.length > 0 && (
         <section className="mt-8">
@@ -117,7 +126,8 @@ export default async function ModelHome() {
 }
 
 function StatusPill({ status }: { status: string }) {
-  const label = status.replace("_", " ").toLowerCase();
+  const detail = assignmentHoldDetail(status);
+  const simple = assignmentSimpleLabel(status);
   const style =
     status === "CONFIRMED"
       ? "bg-board-confirmed/20 text-board-confirmed"
@@ -127,8 +137,8 @@ function StatusPill({ status }: { status: string }) {
           ? "bg-board-option2/70 text-ink"
           : "bg-board-option3 text-ink";
   return (
-    <span className={`text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-md ${style}`}>
-      {label}
+    <span className={cn("text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0", style)}>
+      {detail ?? simple}
     </span>
   );
 }

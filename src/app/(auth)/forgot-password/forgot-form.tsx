@@ -28,7 +28,7 @@ export function ForgotForm() {
 
   if (done) {
     return (
-      <p className="mt-6 text-sm text-ink-muted">
+      <p className="mt-6 text-sm text-[#9c958d]">
         If there&apos;s a LuxLane account with that email, we sent a reset link. Check
         your inbox (and the spam folder).
       </p>
@@ -38,11 +38,11 @@ export function ForgotForm() {
   return (
     <form onSubmit={onSubmit} className="mt-8 space-y-4">
       <div>
-        <label className="ll-label">Email</label>
-        <input name="email" type="email" required className="ll-input" autoComplete="email" />
+        <label className="mk-auth-label">Email</label>
+        <input name="email" type="email" required className="mk-auth-input" autoComplete="email" />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button type="submit" disabled={pending} className="ll-btn-primary w-full">
+      {error && <p className="text-sm mk-auth-error">{error}</p>}
+      <button type="submit" disabled={pending} className="mk-auth-btn">
         {pending ? "Sending…" : "Send reset link"}
       </button>
     </form>

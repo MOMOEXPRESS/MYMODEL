@@ -5,7 +5,8 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { AgencyMemberRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
+import { requirePlanFeature, planError } from "@/lib/plan-guard";
 import { hashPassword } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 
@@ -29,9 +30,11 @@ const profileSchema = z.object({
 });
 
 export async function updateAgencyProfile(formData: FormData) {
-  const user = await requireAgencyStaff();
-  if (user.agencyMembership?.role !== "OWNER") {
-    return { ok: false as const, error: "Only the owner can edit the agency profile" };
+  let user;
+  try {
+    user = await requireAgencyStaffCan("agency.edit_profile");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
   }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
@@ -40,6 +43,13 @@ export async function updateAgencyProfile(formData: FormData) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const d = parsed.data;
+  if (d.publicSiteEnabled === "on") {
+    try {
+      requirePlanFeature(user.agency, "publicSite");
+    } catch (err) {
+      return { ok: false as const, error: planError(err) };
+    }
+  }
   await prisma.agency.update({
     where: { id: user.agencyId },
     data: {
@@ -77,9 +87,11 @@ const inviteSchema = z.object({
 });
 
 export async function createTeamInvite(formData: FormData) {
-  const user = await requireAgencyStaff();
-  if (user.agencyMembership?.role !== "OWNER") {
-    return { ok: false as const, error: "Only the owner can invite team members" };
+  let user;
+  try {
+    user = await requireAgencyStaffCan("agency.manage_team");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
   }
   const parsed = inviteSchema.safeParse({
     email: formData.get("email"),
@@ -120,9 +132,11 @@ ${link}
 }
 
 export async function removeTeamMember(formData: FormData) {
-  const user = await requireAgencyStaff();
-  if (user.agencyMembership?.role !== "OWNER") {
-    return { ok: false as const, error: "Only the owner can remove team members" };
+  let user;
+  try {
+    user = await requireAgencyStaffCan("agency.manage_team");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
   }
   const userId = String(formData.get("userId") ?? "");
   if (userId === user.id) return { ok: false as const, error: "Can't remove yourself" };
@@ -138,9 +152,11 @@ export async function removeTeamMember(formData: FormData) {
 }
 
 export async function deleteTeamInvite(formData: FormData) {
-  const user = await requireAgencyStaff();
-  if (user.agencyMembership?.role !== "OWNER") {
-    return { ok: false as const, error: "Only the owner can manage invites" };
+  let user;
+  try {
+    user = await requireAgencyStaffCan("agency.manage_team");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
   }
   const id = String(formData.get("inviteId") ?? "");
   const inv = await prisma.teamInvite.findUnique({ where: { id } });

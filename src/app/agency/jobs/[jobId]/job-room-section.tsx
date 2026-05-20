@@ -1,6 +1,6 @@
 "use client";
 
-import { RoomFileType } from "@prisma/client";
+import { RoomFileType, type UserRole } from "@prisma/client";
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
@@ -46,7 +46,7 @@ type ChatMsg = {
   createdAt: string;
   senderUserId: string;
   senderName: string;
-  senderRole: "AGENCY_STAFF" | "MODEL" | "LUXLANE_ADMIN";
+  senderRole: UserRole;
 };
 
 export function JobRoomSection({

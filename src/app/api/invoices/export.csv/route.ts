@@ -6,6 +6,8 @@
 
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
+import { can } from "@/lib/permissions";
+import { hasPlanFeature } from "@/lib/plan-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,6 +16,9 @@ export async function GET() {
   const actor = await getSessionUser();
   if (!actor || actor.role !== "AGENCY_STAFF" || !actor.agencyId) {
     return new Response("Unauthorized", { status: 401 });
+  }
+  if (!can(actor.agencyMembership?.role, "invoice.export") || !hasPlanFeature(actor.agency!, "csvExport")) {
+    return new Response("Forbidden", { status: 403 });
   }
 
   const invoices = await prisma.invoice.findMany({

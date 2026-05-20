@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ProspectStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
+import { requirePlanFeature, planError } from "@/lib/plan-guard";
 import { uploadFile, UploadError } from "@/lib/blob";
 
 const createSchema = z.object({
@@ -18,7 +19,13 @@ const createSchema = z.object({
 });
 
 export async function createProspect(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("prospect.edit");
+    requirePlanFeature(user.agency, "scouting");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) {
     if (k === "image") continue;
@@ -65,7 +72,13 @@ export async function createProspect(formData: FormData) {
 }
 
 export async function updateProspectStatus(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("prospect.edit");
+    requirePlanFeature(user.agency, "scouting");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const id = String(formData.get("prospectId") ?? "");
   const statusRaw = String(formData.get("status") ?? "");
   if (!Object.values(ProspectStatus).includes(statusRaw as ProspectStatus)) {
@@ -82,7 +95,13 @@ export async function updateProspectStatus(formData: FormData) {
 }
 
 export async function deleteProspect(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("prospect.edit");
+    requirePlanFeature(user.agency, "scouting");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const id = String(formData.get("prospectId") ?? "");
   const p = await prisma.prospect.findUnique({ where: { id } });
   if (!p || p.agencyId !== user.agencyId) return { ok: false as const, error: "Not found" };
@@ -95,7 +114,13 @@ export async function deleteProspect(formData: FormData) {
 // prospect (so we can send them their password reset). Creates a random
 // password; the model signs in via the reset link.
 export async function convertProspectToModel(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("prospect.edit");
+    requirePlanFeature(user.agency, "scouting");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const id = String(formData.get("prospectId") ?? "");
   const division = String(formData.get("division") ?? "WOMEN");
   if (!["WOMEN", "MEN", "CURVE", "KIDS", "TALENTS", "NEW_FACES"].includes(division)) {

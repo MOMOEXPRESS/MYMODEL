@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { InvoiceStatus, Prisma } from "@prisma/client";
+import { requireCan } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
+import { requirePlanFeature, planError } from "@/lib/plan-guard";
 import { generatePayoutsForInvoice } from "@/lib/payouts";
 import { logEvent } from "@/lib/audit";
 
@@ -31,7 +33,13 @@ const createSchema = z.object({
 });
 
 export async function createInvoiceFromJob(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("invoice.create");
+    requirePlanFeature(user.agency, "invoices");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = createSchema.safeParse(raw);
@@ -118,7 +126,12 @@ export async function createInvoiceFromJob(formData: FormData) {
 }
 
 export async function setInvoiceStatus(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("invoice.edit");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const id = String(formData.get("invoiceId") ?? "");
   const statusRaw = String(formData.get("status") ?? "");
   if (!Object.values(InvoiceStatus).includes(statusRaw as InvoiceStatus)) {
@@ -129,6 +142,13 @@ export async function setInvoiceStatus(formData: FormData) {
     return { ok: false as const, error: "Not found" };
   }
   const status = statusRaw as InvoiceStatus;
+  if (status === "PAID") {
+    try {
+      requireCan(user.agencyMembership?.role, "invoice.mark_paid");
+    } catch (err) {
+      return { ok: false as const, error: permissionError(err) };
+    }
+  }
   await prisma.invoice.update({
     where: { id },
     data: {
@@ -167,7 +187,12 @@ export async function setInvoiceStatus(formData: FormData) {
 }
 
 export async function deleteInvoice(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("invoice.delete");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const id = String(formData.get("invoiceId") ?? "");
   const invoice = await prisma.invoice.findUnique({ where: { id } });
   if (!invoice || invoice.agencyId !== user.agencyId) {
