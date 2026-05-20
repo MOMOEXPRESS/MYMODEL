@@ -42,6 +42,11 @@ export type Action =
   | "contract.delete"
   // Prospects
   | "prospect.edit"
+  // Clients
+  | "client.edit"
+  // Talent packages (shareable links)
+  | "package.create"
+  | "package.send"
   // Travel
   | "travel.edit"
   // Team / agency
@@ -84,6 +89,9 @@ const ALL: Action[] = [
   "contract.send",
   "contract.delete",
   "prospect.edit",
+  "client.edit",
+  "package.create",
+  "package.send",
   "travel.edit",
   "agency.edit_profile",
   "agency.manage_team",
@@ -111,6 +119,9 @@ const MATRIX: Matrix = {
     "contract.create",
     "contract.send",
     "prospect.edit",
+    "client.edit",
+    "package.create",
+    "package.send",
     "travel.edit",
     "compliance.view",
     "activity.view",

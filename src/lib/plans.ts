@@ -18,6 +18,7 @@ export type Plan = {
     analytics: boolean;
     csvExport: boolean;
     scouting: boolean;
+    packages: boolean;
   };
   /** Stripe Price IDs — filled in from env so dev/prod can differ. */
   stripePriceEnv: string;
@@ -38,6 +39,7 @@ export const PLANS: Record<PlanId, Plan> = {
       analytics: false,
       csvExport: false,
       scouting: false,
+      packages: true,
     },
     stripePriceEnv: "STRIPE_PRICE_STARTER",
   },
@@ -55,6 +57,7 @@ export const PLANS: Record<PlanId, Plan> = {
       analytics: true,
       csvExport: true,
       scouting: true,
+      packages: true,
     },
     stripePriceEnv: "STRIPE_PRICE_PRO",
   },
@@ -72,6 +75,7 @@ export const PLANS: Record<PlanId, Plan> = {
       analytics: true,
       csvExport: true,
       scouting: true,
+      packages: true,
     },
     stripePriceEnv: "STRIPE_PRICE_SCALE",
   },

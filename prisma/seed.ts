@@ -18,6 +18,7 @@ try {
 
 import { PrismaClient, Division, ModelStatus, AvailabilityStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { syncHoldsForJob } from "../src/lib/holds";
 
 const prisma = new PrismaClient();
 
@@ -55,8 +56,18 @@ async function main() {
   }
 
   if (existing && force) {
-    console.log("🧹  LUXLANE_SEED_FORCE=1 — clearing existing demo data...");
-    await prisma.agency.delete({ where: { id: existing.id } });
+    console.log("🧹  LUXLANE_SEED_FORCE=1 — resetting demo database...");
+    await prisma.$executeRawUnsafe("DROP SCHEMA IF EXISTS public CASCADE");
+    await prisma.$executeRawUnsafe("CREATE SCHEMA public");
+    await prisma.$executeRawUnsafe("GRANT ALL ON SCHEMA public TO public");
+    await prisma.$executeRawUnsafe("GRANT ALL ON SCHEMA public TO luxlane");
+    const { execSync } = await import("node:child_process");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    execSync("npx prisma db push --accept-data-loss", {
+      cwd: join(dirname(fileURLToPath(import.meta.url)), ".."),
+      stdio: "inherit",
+    });
   }
 
   console.log("🏢  Creating demo agency (Mademoiselle Paris)...");
@@ -85,6 +96,27 @@ async function main() {
   await prisma.agencyMember.create({
     data: { userId: owner.id, agencyId: agency.id, role: "OWNER" },
   });
+
+  const staff = [
+    { email: "booker@mademoiselle.demo", name: "Alex Martin", role: "BOOKER" as const },
+    { email: "production@mademoiselle.demo", name: "Sam Dupont", role: "PRODUCTION" as const },
+    { email: "accounts@mademoiselle.demo", name: "Julie Renard", role: "ACCOUNTS" as const },
+  ];
+  console.log("👥  Creating demo staff (booker, production, accounts)...");
+  for (const s of staff) {
+    const u = await prisma.user.create({
+      data: {
+        email: s.email,
+        passwordHash,
+        displayName: s.name,
+        role: "AGENCY_STAFF",
+        agencyId: agency.id,
+      },
+    });
+    await prisma.agencyMember.create({
+      data: { userId: u.id, agencyId: agency.id, role: s.role },
+    });
+  }
 
   console.log("👯  Creating 20 demo models...");
   const divisions: Division[] = [
@@ -175,13 +207,159 @@ async function main() {
     }
   }
 
+  console.log("🏢  Demo client + booking for client portal...");
+  const DEMO_CLIENT_TOKEN = "demo-client-luxlane-portal";
+  const clientUser = await prisma.user.create({
+    data: {
+      email: "client@luxlane.demo",
+      passwordHash,
+      displayName: "LVMH Creative",
+      role: "CLIENT",
+    },
+  });
+  await prisma.clientProfile.create({
+    data: {
+      userId: clientUser.id,
+      subtype: "BRAND",
+      companyName: "LVMH",
+      city: "Paris",
+    },
+  });
+
+  const client = await prisma.client.create({
+    data: {
+      agencyId: agency.id,
+      name: "LVMH Creative",
+      companyName: "LVMH",
+      email: "client@luxlane.demo",
+      subtype: "BRAND",
+      platformUserId: clientUser.id,
+      portalEnabled: true,
+      portalToken: DEMO_CLIENT_TOKEN,
+      portalTokenIssuedAt: new Date(),
+      createdByUserId: owner.id,
+    },
+  });
+
+  const jobStart = new Date(today0);
+  const jobEnd = new Date(today0);
+  jobEnd.setUTCDate(jobEnd.getUTCDate() + 2);
+
+  const demoJob = await prisma.job.create({
+    data: {
+      agencyId: agency.id,
+      title: "SS26 Beauty — Paris",
+      type: "CAMPAIGN",
+      status: "OPEN",
+      startDate: jobStart,
+      endDate: jobEnd,
+      location: "Studio 8, Paris",
+      locationCity: "Paris",
+      defaultRate: 1200,
+      rateType: "DAY",
+      currency: "EUR",
+      clientId: client.id,
+      ownerUserId: owner.id,
+    },
+  });
+
+  const lineup = allModels.slice(0, 4);
+  for (const m of lineup) {
+    await prisma.jobAssignment.create({
+      data: {
+        jobId: demoJob.id,
+        modelId: m.userId,
+        status: "OPTION_1",
+        proposedByUserId: owner.id,
+      },
+    });
+  }
+  await syncHoldsForJob(demoJob.id);
+
+  console.log("🌐  Platform accounts (creative, member)...");
+  const creativeUser = await prisma.user.create({
+    data: {
+      email: "photographer@luxlane.demo",
+      passwordHash,
+      displayName: "Marie Legrand",
+      role: "CREATIVE",
+    },
+  });
+  await prisma.creativeProfile.create({
+    data: { userId: creativeUser.id, subtype: "PHOTOGRAPHER", city: "Paris" },
+  });
+
+  const memberUser = await prisma.user.create({
+    data: {
+      email: "member@luxlane.demo",
+      passwordHash,
+      displayName: "Alex Explore",
+      role: "MEMBER",
+    },
+  });
+  await prisma.memberProfile.create({
+    data: { userId: memberUser.id, city: "Paris" },
+  });
+
+  await prisma.connection.create({
+    data: {
+      fromUserId: owner.id,
+      toUserId: clientUser.id,
+      status: "ACCEPTED",
+      respondedAt: new Date(),
+    },
+  });
+  await prisma.connection.create({
+    data: {
+      fromUserId: creativeUser.id,
+      toUserId: owner.id,
+      status: "ACCEPTED",
+      respondedAt: new Date(),
+    },
+  });
+
+  const groupEvent = await prisma.groupEvent.create({
+    data: {
+      hostUserId: creativeUser.id,
+      type: "SHOOT",
+      status: "OPEN",
+      title: "Editorial test — Marais",
+      city: "Paris",
+      startDate: jobStart,
+      description: "Demo group event for network collaboration.",
+    },
+  });
+  await prisma.groupEventMember.createMany({
+    data: [
+      { eventId: groupEvent.id, userId: creativeUser.id, role: "HOST", status: "ACCEPTED" },
+      { eventId: groupEvent.id, userId: owner.id, role: "CLIENT", status: "ACCEPTED" },
+    ],
+  });
+
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   console.log("");
   console.log("✅  Seed complete.");
   console.log("");
   console.log("   Agency:       Mademoiselle Paris");
   console.log(`   Signup code:  ${DEMO_CODE}`);
-  console.log(`   Owner login:  ${DEMO_OWNER_EMAIL} / ${DEMO_PASSWORD}`);
-  console.log(`   Model logins: model1@mademoiselle.demo .. model20@... (same password)`);
+  console.log(`   Password:     ${DEMO_PASSWORD} (all demo users)`);
+  console.log("");
+  console.log("   Agency staff:");
+  console.log(`     Owner:      ${DEMO_OWNER_EMAIL}`);
+  console.log("     Booker:     booker@mademoiselle.demo");
+  console.log("     Production: production@mademoiselle.demo");
+  console.log("     Accounts:   accounts@mademoiselle.demo");
+  console.log("   Models:       model1@mademoiselle.demo .. model20@mademoiselle.demo");
+  console.log("");
+  console.log(`   Client portal (no password):`);
+  console.log(`     ${origin}/client/${DEMO_CLIENT_TOKEN}`);
+  console.log("");
+  console.log("   Platform accounts:");
+  console.log("     Client:    client@luxlane.demo");
+  console.log("     Creative:  photographer@luxlane.demo");
+  console.log("     Member:    member@luxlane.demo");
+  console.log(`     Network:   ${origin}/network`);
+  console.log(`     Events:    ${origin}/events`);
   console.log("");
 }
 

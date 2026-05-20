@@ -65,7 +65,9 @@ model Agency {
   contracts      Contract[]
   prospects      Prospect[]
   clients        Client[]
+  clientBriefs   ClientBrief[]
   castingEvents  CastingEvent[]
+  packages       TalentPackage[]
 
   @@index([signupCode])
 }
@@ -73,6 +75,9 @@ model Agency {
 enum UserRole {
   AGENCY_STAFF
   MODEL
+  CLIENT
+  CREATIVE
+  MEMBER
   LUXLANE_ADMIN
 }
 
@@ -98,6 +103,16 @@ model User {
   filesUploaded       RoomFile[]           @relation("FilesUploaded")
   notifications       Notification[]
   conversationMembers ConversationMember[]
+  packagesCreated     TalentPackage[]      @relation("PackagesCreated")
+  clientProfile       ClientProfile?
+  creativeProfile     CreativeProfile?
+  memberProfile       MemberProfile?
+  connectionsSent     Connection[]         @relation("ConnectionsFrom")
+  connectionsReceived Connection[]         @relation("ConnectionsTo")
+  groupEventsHosted   GroupEvent[]         @relation("GroupEventsHosted")
+  groupEventMembers   GroupEventMember[]
+  clientBriefs        ClientBrief[]        @relation("ClientBriefsAuthored")
+  linkedAgencyClients Client[]             @relation("ClientPlatformUser")
 
   @@index([agencyId])
 }
@@ -141,11 +156,24 @@ enum ModelStatus {
   ON_LEAVE
 }
 
+enum ModelRepresentation {
+  AGENCY_SIGNED
+  INDEPENDENT
+}
+
+enum NetworkVisibility {
+  HIDDEN
+  AGENCY_ONLY
+  OPEN
+}
+
 model Model {
   userId            String      @id
   agencyId          String
-  division          Division    @default(WOMEN)
-  status            ModelStatus @default(ACTIVE)
+  division          Division              @default(WOMEN)
+  status            ModelStatus           @default(ACTIVE)
+  representation    ModelRepresentation   @default(AGENCY_SIGNED)
+  networkVisibility NetworkVisibility     @default(AGENCY_ONLY)
   // Optional stage / professional name. When set, used on the Board, comp
   // card, public roster page. Legal name (User.displayName) is reserved for
   // contracts, invoices, payouts.
@@ -174,6 +202,7 @@ model Model {
   assignments      JobAssignment[]
   holds            Hold[]
   broadcastTargets BroadcastResponse[]
+  packageItems     TalentPackageItem[]
 
   @@index([agencyId, status])
   @@index([agencyId, division])
@@ -302,6 +331,7 @@ model Job {
   // Optional link to a Client — powers the client portal. Client sees just
   // their own jobs. Nullable: job can stand alone without a client record.
   clientId     String?
+  briefId      String?   @unique
   // Soft delete — rows live in Trash for 30 days before cron purges.
   deletedAt    DateTime?
   deletedById  String?
@@ -311,6 +341,7 @@ model Job {
   agency      Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   owner       User            @relation("JobsOwned", fields: [ownerUserId], references: [id])
   client      Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  sourceBrief ClientBrief?    @relation(fields: [briefId], references: [id], onDelete: SetNull)
   contacts    JobContact[]
   assignments JobAssignment[]
   holds       Hold[]
@@ -319,6 +350,7 @@ model Job {
   travelItems TravelItem[]
   invoices    Invoice[]
   outfits     OutfitOption[]
+  groupEvents GroupEvent[]
 
   @@index([agencyId, status])
   @@index([agencyId, startDate])
@@ -906,25 +938,82 @@ enum ClientReactionType {
 }
 
 model Client {
-  id                  String    @id @default(cuid())
+  id                  String        @id @default(cuid())
   agencyId            String
   name                String
   companyName         String?
   email               String
   phone               String?
+  subtype             ClientSubtype @default(BRAND)
   // Magic-link token — sent by email. Rotates on revoke. Consumed setter
   // lands a cookie scoped to /client/[id].
   portalToken         String?   @unique
   portalTokenIssuedAt DateTime?
   portalEnabled       Boolean   @default(false)
+  platformUserId      String?   @unique
   createdByUserId     String
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  jobs   Job[]
+  agency       Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  platformUser User?         @relation("ClientPlatformUser", fields: [platformUserId], references: [id], onDelete: SetNull)
+  jobs         Job[]
+  briefs       ClientBrief[]
 
   @@index([agencyId])
+  @@index([email])
+}
+
+// ───────────────────────────────────────────────────────────
+// Talent packages — shareable portfolio links for clients
+// (Frava-style packages with view analytics).
+// ───────────────────────────────────────────────────────────
+
+model TalentPackage {
+  id              String    @id @default(cuid())
+  agencyId        String
+  title           String
+  token           String    @unique
+  note            String?   @db.Text
+  passwordHash    String?
+  expiresAt       DateTime?
+  createdByUserId String
+  lastEmailedAt   DateTime?
+  emailRecipients String[]  @default([])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  agency  Agency              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  creator User                @relation("PackagesCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  items   TalentPackageItem[]
+  views   TalentPackageView[]
+
+  @@index([agencyId, createdAt])
+}
+
+model TalentPackageItem {
+  id          String @id @default(cuid())
+  packageId   String
+  modelId     String
+  sortOrder   Int    @default(0)
+  heroImageId String?
+
+  package TalentPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  model   Model         @relation(fields: [modelId], references: [userId], onDelete: Cascade)
+
+  @@unique([packageId, modelId])
+  @@index([packageId, sortOrder])
+}
+
+model TalentPackageView {
+  id         String   @id @default(cuid())
+  packageId  String
+  viewedAt   DateTime @default(now())
+  viewerHint String?
+
+  package TalentPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId, viewedAt])
 }
 
 // ───────────────────────────────────────────────────────────
@@ -973,4 +1062,201 @@ model CastingSlot {
 
   @@unique([eventId, startAt])
   @@index([eventId, startAt])
+}
+
+// ───────────────────────────────────────────────────────────
+// Platform accounts — clients, creatives, members (network)
+// ───────────────────────────────────────────────────────────
+
+enum ClientSubtype {
+  BRAND
+  MEDIA_AGENCY
+  PRODUCTION
+  MAGAZINE
+  ECOMMERCE
+  CASTING_DIRECTOR
+  PHOTOGRAPHER
+  DESIGNER
+  PR_EVENTS
+  TV_FILM
+  OTHER
+}
+
+enum BriefStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  DECLINED
+  CONVERTED
+}
+
+model ClientBrief {
+  id              String      @id @default(cuid())
+  authorUserId    String
+  targetAgencyId  String
+  agencyClientId  String?
+  title           String
+  description     String?     @db.Text
+  location        String?
+  city            String?
+  startDate       DateTime?   @db.Date
+  endDate         DateTime?   @db.Date
+  status          BriefStatus @default(DRAFT)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  author       User    @relation("ClientBriefsAuthored", fields: [authorUserId], references: [id], onDelete: Cascade)
+  agency       Agency  @relation(fields: [targetAgencyId], references: [id], onDelete: Cascade)
+  agencyClient Client? @relation(fields: [agencyClientId], references: [id], onDelete: SetNull)
+  convertedJob Job?
+
+  @@index([authorUserId, status])
+  @@index([targetAgencyId, status])
+}
+
+model ClientProfile {
+  userId      String        @id
+  subtype     ClientSubtype @default(BRAND)
+  companyName String?
+  city        String?
+  country     String?       @default("FR")
+  bio         String?       @db.Text
+  websiteUrl  String?
+  avatarUrl   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum CreativeSubtype {
+  PHOTOGRAPHER
+  STYLIST
+  MUA
+  HAIR
+  SET_DESIGN
+  OTHER
+}
+
+model CreativeProfile {
+  userId      String          @id
+  subtype     CreativeSubtype @default(PHOTOGRAPHER)
+  city        String?
+  country     String?         @default("FR")
+  bio         String?         @db.Text
+  portfolioUrl String?
+  avatarUrl   String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MemberProfile {
+  userId    String   @id
+  city      String?
+  bio       String?  @db.Text
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+model Connection {
+  id          String           @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  status      ConnectionStatus @default(PENDING)
+  message     String?          @db.Text
+  createdAt   DateTime         @default(now())
+  respondedAt DateTime?
+
+  fromUser User @relation("ConnectionsFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ConnectionsTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([fromUserId, toUserId])
+  @@index([toUserId, status])
+}
+
+enum GroupEventType {
+  CASTING
+  SHOOT
+  FITTING
+  SHOW
+  MEETING
+  COLLAB
+  OTHER
+}
+
+enum GroupEventStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  COMPLETED
+  CANCELLED
+}
+
+model GroupEvent {
+  id          String           @id @default(cuid())
+  hostUserId  String
+  type        GroupEventType   @default(COLLAB)
+  status      GroupEventStatus @default(DRAFT)
+  title       String
+  description String?          @db.Text
+  location    String?
+  city        String?
+  startDate   DateTime         @db.Date
+  endDate     DateTime?        @db.Date
+  rolesNeeded Json?
+  linkedJobId String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  host        User               @relation("GroupEventsHosted", fields: [hostUserId], references: [id], onDelete: Cascade)
+  linkedJob   Job?               @relation(fields: [linkedJobId], references: [id], onDelete: SetNull)
+  members     GroupEventMember[]
+
+  @@index([hostUserId, status])
+  @@index([startDate])
+  @@index([linkedJobId])
+}
+
+enum GroupEventMemberRole {
+  HOST
+  MODEL
+  MUA
+  STYLIST
+  PHOTOGRAPHER
+  CLIENT
+  OTHER
+}
+
+enum GroupEventMemberStatus {
+  INVITED
+  APPLIED
+  ACCEPTED
+  DECLINED
+}
+
+model GroupEventMember {
+  id        String                 @id @default(cuid())
+  eventId   String
+  userId    String
+  role      GroupEventMemberRole   @default(OTHER)
+  status    GroupEventMemberStatus @default(INVITED)
+  note      String?                @db.Text
+  createdAt DateTime               @default(now())
+
+  event GroupEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
 }

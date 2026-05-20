@@ -6,6 +6,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "./db";
 import { getSessionUser } from "./auth";
+import { can } from "./permissions";
 
 export type ModelAccess = {
   modelId: string;
@@ -30,7 +31,7 @@ export async function requireModelAccess(modelUserId: string): Promise<ModelAcce
     return {
       modelId: model.userId,
       agencyId: model.agencyId,
-      canEdit: true,
+      canEdit: can(actor.agencyMembership?.role, "model.edit"),
       actor: "AGENCY_STAFF",
       userId: actor.id,
     };
