@@ -4,6 +4,7 @@ import { JobStatus } from "@prisma/client";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Plus, Link2, Copy, RotateCcw, ShieldOff, Trash2, Mail, Building2 } from "lucide-react";
+import { CLIENT_SUBTYPE_OPTIONS } from "@/lib/client-subtypes";
 import {
   upsertClient,
   enablePortal,
@@ -18,9 +19,11 @@ type ClientRow = {
   companyName: string | null;
   email: string;
   phone: string | null;
+  subtype: string;
   portalEnabled: boolean;
   portalToken: string | null;
   portalTokenIssuedAt: string | null;
+  platformUserId: string | null;
   jobs: { id: string; title: string; status: JobStatus; startDate: string; endDate: string }[];
 };
 
@@ -116,7 +119,12 @@ function ClientCard({ client, onEdit }: { client: ClientRow; onEdit: () => void 
     <li className="ll-card p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-medium truncate">{client.name}</div>
+          <Link href={`/agency/clients/${client.id}`} className="font-medium truncate hover:text-accent">
+            {client.name}
+          </Link>
+          {client.platformUserId && (
+            <span className="ml-2 text-[10px] text-emerald-500/90">Linked</span>
+          )}
           {client.companyName && (
             <div className="mt-0.5 text-xs text-ink-muted inline-flex items-center gap-1">
               <Building2 size={11} /> {client.companyName}
@@ -252,6 +260,16 @@ function ClientForm({ client, onClose }: { client: ClientRow | null; onClose: ()
       <div>
         <label className="ll-label">Phone</label>
         <input name="phone" defaultValue={client?.phone ?? ""} className="ll-input" />
+      </div>
+      <div className="sm:col-span-2">
+        <label className="ll-label">Client type</label>
+        <select name="subtype" defaultValue={client?.subtype ?? "BRAND"} className="ll-input">
+          {CLIENT_SUBTYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </div>
       {error && <p className="sm:col-span-2 text-xs text-red-500">{error}</p>}
       <div className="sm:col-span-2 flex justify-end gap-2">
