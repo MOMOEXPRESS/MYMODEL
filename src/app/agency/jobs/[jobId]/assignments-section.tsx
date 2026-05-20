@@ -5,6 +5,7 @@ import { Plus, UserPlus, X, Trash2, AlertTriangle, Check, MessageSquare, FileChe
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { attachModelsToJob, removeAssignment, updateAssignment, respondToCounterOffer } from "../actions";
+import { assignmentStatusOptionLabel } from "@/lib/status-language";
 import { cn, initials } from "@/lib/utils";
 
 type AssignmentRow = {
@@ -45,17 +46,6 @@ const STATUS_ORDER: AssignmentStatus[] = [
   "RELEASED",
   "DONE",
 ];
-
-const STATUS_LABEL: Record<AssignmentStatus, string> = {
-  PROPOSED: "Proposed",
-  OPTION_1: "Option 1",
-  OPTION_2: "Option 2",
-  OPTION_3: "Option 3",
-  CONFIRMED: "Confirmed",
-  DECLINED: "Declined",
-  RELEASED: "Released",
-  DONE: "Done",
-};
 
 const STATUS_STYLE: Record<AssignmentStatus, string> = {
   PROPOSED: "bg-paper-border/60 text-ink-muted",
@@ -236,7 +226,7 @@ function AssignmentRow({
       >
         {STATUS_ORDER.map((s) => (
           <option key={s} value={s}>
-            {STATUS_LABEL[s]}
+            {assignmentStatusOptionLabel(s, true)}
           </option>
         ))}
       </select>
@@ -488,7 +478,7 @@ function AttachDialog({
           <div>
             <h3 className="font-medium">Attach models</h3>
             <p className="text-xs text-ink-subtle mt-0.5">
-              Picks become PROPOSED. Promote to Option 1 / Confirmed next.
+              Picks become proposed. Promote to on hold or booked next.
             </p>
           </div>
           <button onClick={onClose} className="ll-btn-ghost p-1.5">

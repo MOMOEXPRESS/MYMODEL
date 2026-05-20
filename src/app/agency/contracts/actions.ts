@@ -5,7 +5,8 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { ContractKind, ContractStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { requireAgencyStaff } from "@/lib/auth-guards";
+import { requireAgencyStaffCan, permissionError } from "@/lib/staff";
+import { requirePlanFeature, planError } from "@/lib/plan-guard";
 import { uploadFile, UploadError } from "@/lib/blob";
 
 const createSchema = z.object({
@@ -17,7 +18,13 @@ const createSchema = z.object({
 });
 
 export async function createContract(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("contract.create");
+    requirePlanFeature(user.agency, "contracts");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) {
     if (k === "file") continue;
@@ -59,7 +66,13 @@ export async function createContract(formData: FormData) {
 }
 
 export async function sendForSignature(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("contract.send");
+    requirePlanFeature(user.agency, "contracts");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err, planError(err)) };
+  }
   const id = String(formData.get("contractId") ?? "");
   const contract = await prisma.contract.findUnique({ where: { id } });
   if (!contract || contract.agencyId !== user.agencyId) {
@@ -131,7 +144,12 @@ export async function signContract(input: unknown) {
 }
 
 export async function deleteContract(formData: FormData) {
-  const user = await requireAgencyStaff();
+  let user;
+  try {
+    user = await requireAgencyStaffCan("contract.delete");
+  } catch (err) {
+    return { ok: false as const, error: permissionError(err) };
+  }
   const id = String(formData.get("contractId") ?? "");
   const contract = await prisma.contract.findUnique({ where: { id } });
   if (!contract || contract.agencyId !== user.agencyId) {

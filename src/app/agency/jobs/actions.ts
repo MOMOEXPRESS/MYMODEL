@@ -117,6 +117,11 @@ const updateJobSchema = createJobSchema.extend({
 
 export async function updateJob(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.edit");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = updateJobSchema.safeParse(raw);
@@ -372,6 +377,11 @@ const contactSchema = z.object({
 
 export async function addJobContact(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.edit");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = contactSchema.safeParse(raw);
@@ -399,6 +409,11 @@ export async function addJobContact(formData: FormData) {
 
 export async function deleteJobContact(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.edit");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const contactId = String(formData.get("contactId") ?? "");
   const c = await prisma.jobContact.findUnique({
     where: { id: contactId },
@@ -730,6 +745,11 @@ const outfitSchema = z.object({
 
 export async function addOutfitOption(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.edit");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const raw: Record<string, unknown> = {};
   for (const [k, v] of formData.entries()) raw[k] = v === "" ? null : v;
   const parsed = outfitSchema.safeParse(raw);
@@ -759,6 +779,11 @@ export async function addOutfitOption(formData: FormData) {
 
 export async function deleteOutfitOption(formData: FormData) {
   const user = await requireAgencyStaff();
+  try {
+    requireCan(user.agencyMembership?.role, "job.edit");
+  } catch (err) {
+    return { ok: false as const, error: forbiddenMsg(err, "Forbidden") };
+  }
   const optionId = String(formData.get("optionId") ?? "");
   const opt = await prisma.outfitOption.findUnique({
     where: { id: optionId },

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireAgencyStaff } from "@/lib/auth-guards";
 import { AgencyNav } from "@/components/agency-nav";
 import { LogoutButton } from "@/components/logout-button";
@@ -7,6 +6,8 @@ import { PageTransition } from "@/components/page-transition";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { CommandPalette } from "@/components/command-palette";
 import { CommandKHint } from "@/components/command-k-hint";
+import { AppLogo } from "@/components/app-logo";
+import { PlatformNav } from "@/components/platform-nav";
 import { getLocale } from "@/lib/i18n";
 import { initials } from "@/lib/utils";
 
@@ -17,50 +18,55 @@ export default async function AgencyLayout({
 }) {
   const user = await requireAgencyStaff();
   const locale = await getLocale();
+  const roleLabel =
+    user.agencyMembership?.role === "OWNER"
+      ? "Owner"
+      : user.agencyMembership?.role === "BOOKER"
+        ? "Booker"
+        : user.agencyMembership?.role === "PRODUCTION"
+          ? "Production"
+          : user.agencyMembership?.role === "ACCOUNTS"
+            ? "Accounts"
+            : "Staff";
 
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="w-60 shrink-0 border-r border-paper-border bg-paper-elevated flex flex-col">
-        <div className="px-5 h-16 flex items-center justify-between border-b border-paper-border">
-          <Link href="/agency" className="font-serif text-lg tracking-tight">
-            LuxLane
-          </Link>
+    <div className="min-h-screen flex bg-paper">
+      <aside className="w-[260px] shrink-0 flex flex-col border-r border-paper-border bg-paper-elevated/95">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-paper-border">
+          <AppLogo href="/agency" />
           <NotificationBell />
         </div>
 
-        <div className="px-4 py-4">
-          <div className="text-xs uppercase tracking-wider text-ink-subtle">Agency</div>
-          <div className="text-sm font-medium mt-1 truncate">{user.agency.name}</div>
-          <div className="text-xs text-ink-muted mt-0.5">
-            {user.agency.city ? `${user.agency.city} · ` : ""}Code {user.agency.signupCode}
-          </div>
+        <div className="px-4 py-4 border-b border-paper-border">
+          <p className="text-sm font-semibold truncate text-ink">{user.agency.name}</p>
+          <p className="text-xs text-ink-subtle mt-0.5 truncate">
+            {user.agency.city ?? "Agency"} · Code {user.agency.signupCode}
+          </p>
         </div>
 
         <CommandKHint />
         <AgencyNav role={user.agencyMembership?.role ?? null} />
 
-        <div className="mt-auto p-4 border-t border-paper-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-accent-soft text-accent text-xs font-medium flex items-center justify-center">
+        <div className="mt-auto p-3 border-t border-paper-border">
+          <div className="flex items-center gap-3 rounded-xl bg-paper-muted border border-paper-border p-3">
+            <div className="w-9 h-9 rounded-full bg-accent-soft text-accent text-xs font-semibold flex items-center justify-center ring-1 ring-accent/20">
               {initials(user.displayName)}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium truncate">{user.displayName}</div>
-              <div className="text-xs text-ink-subtle truncate">
-                {user.agencyMembership?.role.toLowerCase() ?? "staff"}
-              </div>
+              <p className="text-sm font-medium truncate">{user.displayName}</p>
+              <p className="text-xs text-ink-subtle">{roleLabel}</p>
             </div>
           </div>
-          <LogoutButton className="mt-3 w-full ll-btn-ghost text-xs justify-start" />
-          <div className="mt-3 flex items-center justify-between">
+          <LogoutButton className="mt-2 w-full ll-btn-ghost text-xs justify-start h-9" />
+          <div className="mt-2 flex justify-end">
             <LocaleSwitcher current={locale} />
           </div>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 flex flex-col relative">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-glow-radial opacity-80" />
+        <PlatformNav />
         <PageTransition>{children}</PageTransition>
       </main>
       <CommandPalette />

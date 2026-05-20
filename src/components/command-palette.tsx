@@ -42,11 +42,12 @@ const ROUTES: {
 }[] = [
   { label: "Home", href: "/agency", hint: "dashboard", icon: Home },
   { label: "Roster", href: "/agency/roster", hint: "models", icon: Users },
-  { label: "Board", href: "/agency/board", hint: "calendar", icon: CalendarRange },
+  { label: "Schedule", href: "/agency/schedule", hint: "calendar", icon: CalendarRange },
   { label: "Jobs", href: "/agency/jobs", hint: "bookings", icon: Briefcase },
   { label: "Messages", href: "/agency/messages", hint: "dms", icon: MessageSquare },
   { label: "Broadcasts", href: "/agency/broadcasts", hint: "send many", icon: Radio },
   { label: "Pitch deck", href: "/agency/pitch", hint: "export pdf", icon: FileText },
+  { label: "Packages", href: "/agency/packages", hint: "share links", icon: FileText },
   { label: "Invoices", href: "/agency/invoices", hint: "billing", icon: Receipt },
   { label: "Payouts", href: "/agency/payouts", hint: "model pay", icon: Banknote },
   { label: "Contracts", href: "/agency/contracts", hint: "signing", icon: FilePenLine },
